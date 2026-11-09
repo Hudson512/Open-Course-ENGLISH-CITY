@@ -33,6 +33,21 @@ npm start            # compila o jogo e abre o servidor
 
 Abre **http://localhost:8787** no Chrome ou Edge.
 
+### 🐳 Ou com Docker (jogo + base de dados)
+
+```bash
+docker compose up --build
+```
+
+Abre **http://localhost:3000**. Arrancam três contentores: `frontend` (nginx a servir o jogo), `backend` (API Node + multiplayer) e `db` (Postgres). O progresso dos jogadores fica também guardado na base de dados, no volume `pgdata`, por isso sobrevive a reinícios e rebuilds; em ⚙️ Definições aparece um **código do save** para continuar noutro dispositivo.
+
+- Chaves de IA: coloca-as no `.env` (é lido automaticamente) ou cola-as nas Definições.
+- Outra porta: `WEB_PORT=8000 docker compose up`.
+- Ollama na tua máquina: `LLM_PROVIDER=ollama` e `LLM_BASE_URL=http://host.docker.internal:11434/v1`.
+- `docker compose down` pára tudo e mantém os dados; `docker compose down -v` apaga também os saves.
+
+Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `DATABASE_URL` com um Postgres teu.
+
 ## ✨ O que já funciona (v0.1)
 
 | | |
@@ -99,7 +114,8 @@ client/            Vite + Phaser 3 (mundo) + DOM (HUD, diálogos, menus)
   src/ui/          hud, dialog (conversa com IA), panels, screens
   src/state.js     estado, sobrevivência, aplicar ações, XP, vocabulário, save (localStorage)
 server/            Node + Express + ws
-  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config
+  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  db.js            saves dos jogadores em Postgres (opcional, via DATABASE_URL)
   prompts.js       constrói o prompt do NPC (personagem, cena, nível, regras, formato)
   llm.js           cliente multi-provedor + parsing robusto de JSON
   mock.js          NPC offline por regras
@@ -166,7 +182,8 @@ Não sabes por onde começar, ou tens uma ideia? [Abre uma issue](https://github
 - [ ] Mais destinos: 🇬🇧 Londres, 🇨🇦 Toronto, 🇦🇺 Sydney, e outras línguas (🇫🇷 🇪🇸)
 - [ ] Transportes públicos, carro próprio, contas (luz, telefone), compras online
 - [ ] Repetição espaçada a sério (SM-2) e relatórios de progresso
-- [ ] Persistência do multiplayer (servidor dedicado + contas opcionais)
+- [x] Docker e saves no servidor (Postgres)
+- [ ] Contas opcionais e mundo partilhado persistente
 - [ ] Modo mobile (joystick virtual)
 
 ## ⭐ Apoia o projecto

@@ -9,12 +9,14 @@ import { buildSystemPrompt, buildMessages, buildCheckPrompt } from './prompts.js
 import { mockTurn } from './mock.js';
 import { attachMultiplayer } from './multiplayer.js';
 import { TEMPLATES, resolve } from '../shared/missions.js';
+import { postgresStore, validId, validToken } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 
-export function createApp() {
+// `store` (see db.js) enables server-side saves; without it the game is localStorage-only.
+export function createApp({ store = null } = {}) {
   const app = express();
   app.use(express.json({ limit: '200kb' }));
 
@@ -25,6 +27,7 @@ export function createApp() {
       serverProvider: provider,
       serverModel: process.env.LLM_MODEL || p.model,
       serverHasKey: Boolean((p.envKey && process.env[p.envKey]) || process.env.LLM_API_KEY || p.noKey || p.kind === 'mock'),
+      persistence: Boolean(store),
       allowClientKeys: String(process.env.ALLOW_CLIENT_KEYS ?? 'true') !== 'false',
       presets: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, { model: v.model, models: v.models || [], baseUrl: v.baseUrl || '', needsKey: !v.noKey && v.kind !== 'mock' }]))
     });
@@ -81,6 +84,39 @@ export function createApp() {
     }
   });
 
+  // Server-side saves. A save is owned by whoever created it: the secret token never leaves
+  // the player's browser except to prove ownership here.
+  const saveGuard = (req, res, token) => {
+    if (!store) return res.status(503).json({ error: 'persistence disabled' });
+    if (!validId(req.params.id) || !validToken(token)) return res.status(400).json({ error: 'invalid save id or token' });
+    return null;
+  };
+  app.put('/api/save/:id', async (req, res) => {
+    const { token, data } = req.body || {};
+    if (saveGuard(req, res, token)) return;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return res.status(400).json({ error: 'invalid save data' });
+    try {
+      if (!await store.put(req.params.id, token, data)) return res.status(403).json({ error: 'wrong token' });
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[save]', e.message);
+      res.status(500).json({ error: 'could not save' });
+    }
+  });
+  app.get('/api/save/:id', async (req, res) => {
+    const token = req.get('x-save-token');
+    if (saveGuard(req, res, token)) return;
+    try {
+      const row = await store.get(req.params.id, token);
+      if (row === null) return res.status(404).json({ error: 'save not found' });
+      if (row === false) return res.status(403).json({ error: 'wrong token' });
+      res.json(row);
+    } catch (e) {
+      console.error('[save]', e.message);
+      res.status(500).json({ error: 'could not load' });
+    }
+  });
+
   const dist = path.join(__dirname, '..', 'dist');
   if (fs.existsSync(dist)) {
     app.use(express.static(dist));
@@ -92,12 +128,14 @@ export function createApp() {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const server = http.createServer(createApp());
+  const store = process.env.DATABASE_URL ? await postgresStore(process.env.DATABASE_URL) : null;
+  const server = http.createServer(createApp({ store }));
   attachMultiplayer(server);
   server.listen(PORT, HOST, () => {
     const provider = process.env.LLM_PROVIDER || 'mock';
     console.log(`\n🗽  OpenCourse English City running → http://localhost:${PORT}`);
     console.log(`    LLM provider (server default): ${provider}${provider === 'mock' ? ' (offline — add a key in .env or in the game Settings)' : ''}`);
+    console.log(`    Saves: ${store ? 'Postgres (server-side)' : 'browser only (set DATABASE_URL to persist on the server)'}`);
     console.log(`    Friends on your network can join at http://<your-ip>:${PORT}\n`);
   });
 }

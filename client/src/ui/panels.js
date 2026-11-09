@@ -164,8 +164,29 @@ export async function settingsPanel() {
     h('h3', {}, '🎧 Audio & UI'),
     chk('voice', t('voice')), chk('mic', t('mic')), chk('autoTranslate', t('showTranslation')), chk('checkChat', t('checkChat')),
     field(t('uiLang'), lang),
+    ...(cfg.persistence ? cloudSection() : []),
     S.getState() ? h('button', { class: 'danger small', onclick: () => { if (confirm(t('confirmReset'))) { S.wipe(); location.reload(); } } }, `🗑 ${t('resetSave')}`) : null);
   modal(`⚙️ ${t('settings')}`, body);
+}
+function cloudSection() {
+  const msg = h('div', { class: 'muted' });
+  const code = h('input', { readonly: true, value: S.saveCode(), onfocus: e => e.target.select() });
+  const restore = h('input', { placeholder: 'p_xxxxxxxx.…', autocomplete: 'off' });
+  return [
+    h('h3', {}, `☁️ ${t('cloudTitle')}`),
+    h('p', { class: 'note' }, t('cloudNote')),
+    S.getState() ? field(t('saveCode'), code) : null,
+    S.getState() ? h('button', { class: 'ghost small', onclick: async () => {
+      try { await navigator.clipboard.writeText(code.value); } catch { code.select(); }
+      msg.textContent = (await S.syncNow()) ? `✅ ${t('cloudSynced')}` : `❌ ${t('cloudFailed')}`;
+    } }, t('copySync')) : null,
+    field(t('restoreCode'), restore),
+    h('button', { class: 'ghost small', onclick: async () => {
+      if (S.getState() && !confirm(t('confirmRestore'))) return;
+      try { await S.restoreFromServer(restore.value); location.reload(); } catch (e) { msg.textContent = `❌ ${e.message}`; }
+    } }, t('restore')),
+    msg
+  ];
 }
 const field = (label, input) => h('label', { class: 'field' }, h('span', {}, label), input);
 

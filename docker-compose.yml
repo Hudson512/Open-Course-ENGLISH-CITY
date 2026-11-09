@@ -1,0 +1,53 @@
+# docker compose up --build   →   http://localhost:3000
+#
+# frontend (nginx) ──/api, /ws──▶ backend (Node) ──▶ db (Postgres, volume "pgdata")
+# Only the frontend is published on the host. LLM keys and options come from .env (optional).
+name: english-city
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: city
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-city}
+      POSTGRES_DB: city
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U city -d city"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: 8787
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://city:${POSTGRES_PASSWORD:-city}@db:5432/city
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach an Ollama running on the host
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:

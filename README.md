@@ -33,6 +33,21 @@ npm start            # builds the game and starts the server
 
 Open **http://localhost:8787** in Chrome or Edge.
 
+### 🐳 Or with Docker (game + database)
+
+```bash
+docker compose up --build
+```
+
+Open **http://localhost:3000**. Three containers start: `frontend` (nginx serving the game), `backend` (Node API + multiplayer) and `db` (Postgres). Player progress is also saved in the database, in the `pgdata` volume, so it survives restarts and rebuilds; ⚙️ Settings shows a **save code** to continue on another device.
+
+- AI keys: put them in `.env` (it is read automatically) or paste them in Settings.
+- Another port: `WEB_PORT=8000 docker compose up`.
+- Ollama on your machine: `LLM_PROVIDER=ollama` and `LLM_BASE_URL=http://host.docker.internal:11434/v1`.
+- `docker compose down` stops everything and keeps the data; `docker compose down -v` also deletes the saves.
+
+Without Docker the game keeps progress in the browser only, unless you set `DATABASE_URL` to a Postgres of your own.
+
 ## ✨ What already works (v0.1)
 
 | | |
@@ -99,7 +114,8 @@ client/            Vite + Phaser 3 (world) + DOM (HUD, dialogues, menus)
   src/ui/          hud, dialog (AI conversation), panels, screens
   src/state.js     state, survival, applying actions, XP, vocabulary, save (localStorage)
 server/            Node + Express + ws
-  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config
+  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  db.js            player saves in Postgres (optional, via DATABASE_URL)
   prompts.js       builds the NPC prompt (character, scene, level, rules, format)
   llm.js           multi-provider client + robust JSON parsing
   mock.js          rule-based offline NPC
@@ -166,7 +182,8 @@ Not sure where to start, or have an idea? [Open an issue](https://github.com/Hud
 - [ ] More destinations: 🇬🇧 London, 🇨🇦 Toronto, 🇦🇺 Sydney, and other languages (🇫🇷 🇪🇸)
 - [ ] Public transport, your own car, bills (electricity, phone), online shopping
 - [ ] Proper spaced repetition (SM-2) and progress reports
-- [ ] Multiplayer persistence (dedicated server + optional accounts)
+- [x] Docker setup and server-side saves (Postgres)
+- [ ] Optional accounts and a persistent shared world
 - [ ] Mobile mode (virtual joystick)
 
 ## ⭐ Support the project

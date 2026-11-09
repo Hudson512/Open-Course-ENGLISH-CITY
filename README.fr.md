@@ -33,6 +33,21 @@ npm start            # compile le jeu et démarre le serveur
 
 Ouvrez **http://localhost:8787** dans Chrome ou Edge.
 
+### 🐳 Ou avec Docker (jeu + base de données)
+
+```bash
+docker compose up --build
+```
+
+Ouvrez **http://localhost:3000**. Trois conteneurs démarrent : `frontend` (nginx qui sert le jeu), `backend` (API Node + multijoueur) et `db` (Postgres). La progression des joueurs est aussi enregistrée dans la base de données, dans le volume `pgdata`, et survit donc aux redémarrages et aux rebuilds ; ⚙️ Paramètres affiche un **code de sauvegarde** pour continuer sur un autre appareil.
+
+- Clés d'IA : mettez-les dans `.env` (lu automatiquement) ou collez-les dans les Paramètres.
+- Autre port : `WEB_PORT=8000 docker compose up`.
+- Ollama sur votre machine : `LLM_PROVIDER=ollama` et `LLM_BASE_URL=http://host.docker.internal:11434/v1`.
+- `docker compose down` arrête tout et conserve les données ; `docker compose down -v` supprime aussi les sauvegardes.
+
+Sans Docker, le jeu garde la progression uniquement dans le navigateur, sauf si vous définissez `DATABASE_URL` vers votre propre Postgres.
+
 ## ✨ Ce qui fonctionne déjà (v0.1)
 
 | | |
@@ -99,7 +114,8 @@ client/            Vite + Phaser 3 (monde) + DOM (HUD, dialogues, menus)
   src/ui/          hud, dialog (conversation avec l'IA), panels, screens
   src/state.js     état, survie, application des actions, XP, vocabulaire, sauvegarde (localStorage)
 server/            Node + Express + ws
-  index.js         API : /api/npc/turn, /api/chat/check, /api/llm/test, /api/config
+  index.js         API : /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  db.js            sauvegardes des joueurs dans Postgres (facultatif, via DATABASE_URL)
   prompts.js       construit le prompt du PNJ (personnage, scène, niveau, règles, format)
   llm.js           client multi-fournisseur + analyse robuste du JSON
   mock.js          PNJ hors ligne par règles
@@ -166,7 +182,8 @@ Vous ne savez pas par où commencer, ou vous avez une idée ? [Ouvrez une issue]
 - [ ] Plus de destinations : 🇬🇧 Londres, 🇨🇦 Toronto, 🇦🇺 Sydney, et d'autres langues (🇫🇷 🇪🇸)
 - [ ] Transports en commun, voiture personnelle, factures (électricité, téléphone), achats en ligne
 - [ ] Vraie répétition espacée (SM-2) et rapports de progression
-- [ ] Persistance du multijoueur (serveur dédié + comptes facultatifs)
+- [x] Docker et sauvegardes côté serveur (Postgres)
+- [ ] Comptes facultatifs et monde partagé persistant
 - [ ] Mode mobile (joystick virtuel)
 
 ## ⭐ Soutenir le projet

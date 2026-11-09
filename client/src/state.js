@@ -17,18 +17,55 @@ const toast = (text, kind = 'info') => bus.emit('toast', { text, kind });
 
 export function getState() { return state; }
 export function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; } }
-export function save() { if (state) try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* quota */ } }
+export function save() {
+  if (!state) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* quota */ }
+  scheduleSync();
+}
 export function load() {
   try { state = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { state = null; }
-  if (state) ensureDaily();
+  if (state) { ensureDaily(); if (!state.token) state.token = newToken(); }
   return state;
 }
 export function wipe() { try { localStorage.removeItem(SAVE_KEY); } catch { /* */ } state = null; }
 
+// ── Server-side backup (only when the server has a database) ────
+// localStorage stays the primary copy. The server copy is keyed by the player id and
+// protected by a secret token; "id.token" is the save code used to restore elsewhere.
+const SYNC_DELAY = 4000;
+let syncTimer = null, syncOff = false;
+const newToken = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+export const saveCode = () => (state ? `${state.id}.${state.token}` : '');
+
+function scheduleSync() {
+  if (syncOff || syncTimer) return;
+  syncTimer = setTimeout(() => { syncTimer = null; syncNow(); }, SYNC_DELAY);
+}
+export async function syncNow({ keepalive = false } = {}) {
+  if (!state || syncOff) return false;
+  clearTimeout(syncTimer); syncTimer = null;
+  const { token, ...data } = state;
+  try {
+    const res = await fetch(`/api/save/${state.id}`, { method: 'PUT', keepalive, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, data }) });
+    if (res.status === 503) syncOff = true; // server has no database
+    return res.ok;
+  } catch { return false; /* offline: the next save retries */ }
+}
+export async function restoreFromServer(code) {
+  const [id, token] = String(code).trim().split('.');
+  const res = await fetch(`/api/save/${encodeURIComponent(id)}`, { headers: { 'x-save-token': token || '' } });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+  state = { ...(await res.json()).data, id, token };
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* quota */ }
+  return state;
+}
+if (typeof window !== 'undefined') window.addEventListener('pagehide', () => { if (syncTimer) syncNow({ keepalive: true }); });
+
 export function newGame(player) {
   state = {
     version: 1,
-    id: 'p_' + Math.random().toString(36).slice(2, 10),
+    id: 'p_' + Math.random().toString(36).slice(2, 10).padEnd(8, '0'),
+    token: newToken(),
     player, destination: 'usa',
     stats: { health: 100, hunger: 70, energy: 75, social: 50 },
     money: START_MONEY, xp: 0,

@@ -30,6 +30,9 @@ const STR = {
     hired: 'Foste contratado(a)!', paid: 'Recebeste', rejected: 'Não foste aprovado(a) desta vez. Tenta amanhã.',
     payFail: 'Pagamento recusado: dinheiro insuficiente.', carHit: 'Cuidado com os carros!', controls: 'WASD/setas: andar · Shift: correr · E: interagir · Enter: chat · M: missões · I: inventário · N: caderno · P: telemóvel',
     lowHunger: 'Estás com fome! Compra comida.', lowEnergy: 'Estás exausto(a). Vai dormir.', lowSocial: 'Sentes-te sozinho(a). Conversa com alguém.',
+    cloudTitle: 'Progresso no servidor', cloudNote: 'O teu progresso é guardado neste browser e também no servidor. Guarda o código para continuar noutro dispositivo — quem tiver o código pode jogar com o teu save.',
+    saveCode: 'Código do save', copySync: 'Copiar código e sincronizar', cloudSynced: 'Sincronizado com o servidor.', cloudFailed: 'Não foi possível sincronizar.',
+    restoreCode: 'Recuperar com um código', restore: 'Recuperar', confirmRestore: 'Substituir o progresso deste browser pelo do código?',
     newDay: 'Novo dia', resetSave: 'Apagar progresso', confirmReset: 'Apagar todo o progresso?', you: 'Tu', alreadyChatted: 'Já conversaste com esta pessoa hoje.'
   },
   en: {
@@ -62,6 +65,9 @@ const STR = {
     hired: 'You got the job!', paid: 'You earned', rejected: 'Not approved this time. Try again tomorrow.',
     payFail: 'Payment declined: not enough money.', carHit: 'Watch out for cars!', controls: 'WASD/arrows: walk · Shift: run · E: interact · Enter: chat · M: missions · I: inventory · N: notebook · P: phone',
     lowHunger: 'You are hungry! Buy food.', lowEnergy: 'You are exhausted. Go to sleep.', lowSocial: 'You feel lonely. Talk to someone.',
+    cloudTitle: 'Progress on the server', cloudNote: 'Your progress is saved in this browser and on the server. Keep the code to continue on another device — anyone with the code can play your save.',
+    saveCode: 'Save code', copySync: 'Copy code and sync', cloudSynced: 'Synced with the server.', cloudFailed: 'Could not sync.',
+    restoreCode: 'Restore with a code', restore: 'Restore', confirmRestore: 'Replace the progress in this browser with the one from the code?',
     newDay: 'New day', resetSave: 'Delete progress', confirmReset: 'Delete all progress?', you: 'You', alreadyChatted: 'You already chatted with this person today.'
   }
 };

@@ -5,6 +5,8 @@ import { buildMessages, buildSystemPrompt } from '../server/prompts.js';
 import { mockTurn } from '../server/mock.js';
 import { validateAction, generateDaily, TEMPLATES, jobRequirements } from '../shared/missions.js';
 import { findCatalogItem, levelFor } from '../shared/data.js';
+import { createApp } from '../server/index.js';
+import { memoryStore } from '../server/db.js';
 
 const baseState = { xp: 0, money: 100, home: null, flags: { phone: false, bank: false }, job: null, time: { day: 1, minutes: 600 }, player: { name: 'Ana', profession: 'nurse', nativeLang: 'pt' } };
 
@@ -93,4 +95,31 @@ test('a client-chosen base URL never receives the server keys', () => {
 test('helpers', () => {
   assert.equal(findCatalogItem('grocery', 'Eggs').key, 'eggs');
   assert.equal(levelFor(950).id, 'B1');
+});
+
+test('saves round-trip and are protected by the owner token', async () => {
+  const server = createApp({ store: memoryStore() }).listen(0);
+  try {
+    const base = `http://127.0.0.1:${server.address().port}/api/save/`;
+    const tokenA = 'a'.repeat(32), tokenB = 'b'.repeat(32);
+    const put = (id, token, data) => fetch(base + id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, data }) });
+    const get = (id, token) => fetch(base + id, { headers: { 'x-save-token': token } });
+    assert.equal((await put('p_abc12345', tokenA, { xp: 10 })).status, 200);
+    assert.equal((await put('p_abc12345', tokenA, { xp: 25 })).status, 200);
+    assert.equal((await put('p_abc12345', tokenB, { xp: 999 })).status, 403);
+    assert.equal((await put('NOT-AN-ID', tokenA, { xp: 1 })).status, 400);
+    assert.equal((await put('p_abc12345', tokenA, 'nope')).status, 400);
+    assert.equal((await (await get('p_abc12345', tokenA)).json()).data.xp, 25);
+    assert.equal((await get('p_abc12345', tokenB)).status, 403);
+    assert.equal((await get('p_missing1', tokenA)).status, 404);
+  } finally { server.close(); }
+});
+
+test('without a store the save API reports persistence is off', async () => {
+  const server = createApp().listen(0);
+  try {
+    const port = server.address().port;
+    assert.equal((await fetch(`http://127.0.0.1:${port}/api/save/p_abc12345`, { headers: { 'x-save-token': 'a'.repeat(32) } })).status, 503);
+    assert.equal((await (await fetch(`http://127.0.0.1:${port}/api/config`)).json()).persistence, false);
+  } finally { server.close(); }
 });
