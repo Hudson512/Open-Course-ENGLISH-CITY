@@ -1,0 +1,178 @@
+# 🗽 OpenCourse — English City
+
+[English](README.md) · **Português** · [Français](README.fr.md)
+
+[![Licença: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Node](https://img.shields.io/badge/node-%3E%3D18.17-brightgreen)
+[![PRs bem-vindos](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contribuir)
+[![GitHub stars](https://img.shields.io/github/stars/Hudson512/Open-Course-ENGLISH-CITY?style=social)](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/stargazers)
+
+**Aprende inglês a vivê-lo: um jogo de mundo aberto (estilo GTA clássico, visto de cima) em que cada personagem é uma IA com quem tens de falar.**
+
+Aterras em Maple City, nos EUA, com uma mala e $600. Regateias com o taxista, arrendas um quarto, arranjas um telefone, abres uma conta bancária, passas numa entrevista de emprego — tudo em inglês, com um coach invisível a corrigir cada frase. Grátis, open source, e corre na tua máquina com a **tua própria API key** (ou sem chave nenhuma).
+
+![Diálogo com o taxista](docs/screenshot-dialog.png)
+
+## 💡 Porquê este projecto
+
+- **As apps de línguas ensinam frases; a vida pede conversas.** Aqui praticas as que contam quando te mudas para fora: preços, renda, papelada, conversa de circunstância, entrevistas.
+- **A IA faz de personagem, o jogo guarda as regras.** Os NPCs vendem, cobram, arrendam e contratam, mas cada acção é validada pelo jogo, por isso o modelo não pode oferecer dinheiro nem saltar etapas.
+- **Sem dependência de fornecedor, sem subscrição.** Claude, OpenAI, Gemini, Groq, OpenRouter, um modelo local no Ollama, ou um modo offline por regras.
+- **Pequeno o suficiente para se perceber numa tarde.** Cerca de 3 200 linhas de JavaScript simples e três dependências de produção.
+
+## 🚀 Experimenta num minuto
+
+Precisas de **Node.js 18.17+** ([nodejs.org](https://nodejs.org)). Não é preciso API key para experimentar: sem chave, o jogo corre em modo offline (**mock**).
+
+```bash
+git clone https://github.com/Hudson512/Open-Course-ENGLISH-CITY.git
+cd Open-Course-ENGLISH-CITY
+npm install
+npm start            # compila o jogo e abre o servidor
+```
+
+Abre **http://localhost:8787** no Chrome ou Edge.
+
+## ✨ O que já funciona (v0.1)
+
+| | |
+|---|---|
+| ✈️ **Partida** | Crias a personagem (nome, cidade natal, língua materna, profissão) e escolhes o destino no painel de partidas do aeroporto. Por agora só 🇺🇸 EUA está ativo (UK, Canadá, Austrália, França, Espanha marcados "em breve"). |
+| 🚕 **Chegada** | Aterras em Maple City e tens de **negociar o táxi** com o Tony e escolher entre o **Hotel Sunrise** ($110/noite) ou o **Oak Street Apartments** ($180/semana). |
+| 🌆 **Mundo aberto** | Cidade com estradas, trânsito (os carros travam… mas cuidado ao atravessar!), parque, 13 locais com porta, peões com personalidade, ciclo dia/noite, minimapa e seta GPS. |
+| 🤖 **NPCs de IA** | 13 personagens fixas (padeira, barbeiro, empregada do diner, bancária, recrutador…) + 8 peões. A IA adapta a linguagem ao teu nível (A1→C2), mantém a personagem e **age no mundo** (vende, cobra, aluga, contrata) através de ações validadas pelo jogo. |
+| 🧑‍🏫 **Coach invisível** | Cada frase tua recebe nota 0–100, versão corrigida/natural, dicas na tua língua, palavras novas (vão para o caderno) e sugestões de resposta. Tradução automática nos níveis A1/A2. |
+| 🎤 **Voz** | Os NPCs falam (text-to-speech do browser) e podes responder ao microfone (Chrome/Edge). |
+| ❤️ **Sobrevivência** | Fome, energia, social e saúde descem com o tempo. Come, dorme, conversa. Se desmaias pagas o hospital; 3 desmaios = voltas para casa (fim de jogo). Renda cobrada automaticamente — sem dinheiro, és despejado. |
+| ⭐ **História** | Táxi → alojamento → número de telefone → conta bancária → **entrevista de emprego na tua área** → turnos de trabalho diários com salário. |
+| 📅 **Missões diárias** | Geradas por dia: compras na padaria/mercado/café, almoço no diner com gorjeta, corte de cabelo específico, falar com peões, falar com jogadores reais. |
+| 👥 **Multiplayer** | Vês os outros jogadores na cidade, com nível CEFR, e falas com quem está perto (chat de proximidade + balões). Opcional: a IA corrige o teu inglês no chat. |
+| 📒 **Caderno** | Vocabulário recolhido automaticamente + flashcards com repetição espaçada simples. |
+| 🔌 **Qualquer IA** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local e grátis)**, qualquer servidor compatível com OpenAI (LM Studio, vLLM…) ou **modo offline** sem IA para testar. |
+
+![Multiplayer](docs/screenshot-multiplayer.png)
+
+## 🔌 Configurar a tua IA (escolhe UMA forma)
+
+**A) No jogo (mais fácil):** ⚙️ Definições → escolhe o provedor → cola a API key → *Testar ligação* → *Guardar*.
+A chave fica no `localStorage` do teu browser e só é enviada para o servidor local do jogo.
+
+**B) No servidor:** copia `.env.example` para `.env` e preenche:
+
+```env
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+| Provedor | `LLM_PROVIDER` | Variável da chave | Modelo por omissão* |
+|---|---|---|---|
+| Anthropic Claude | `anthropic` | `ANTHROPIC_API_KEY` | `claude-haiku-5-5` |
+| OpenAI | `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
+| Google Gemini | `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash` |
+| Groq | `groq` | `GROQ_API_KEY` | `llama-3.3-70b-versatile` |
+| OpenRouter | `openrouter` | `OPENROUTER_API_KEY` | `meta-llama/llama-3.3-70b-instruct` |
+| Ollama (local) | `ollama` | — | `llama3.1` |
+| Outro compatível OpenAI | `custom` | `LLM_API_KEY` + `LLM_BASE_URL` | — |
+| Sem IA (offline) | `mock` | — | respostas por regras |
+
+\* Os nomes de modelos mudam com frequência: podes sempre escolher outro em `LLM_MODEL` ou nas Definições. Para custos baixos usa modelos "mini/flash/haiku"; cada fala de NPC é uma chamada curta (~1–2k tokens).
+
+**Grátis e privado:** instala o [Ollama](https://ollama.com), corre `ollama pull llama3.1` e escolhe `ollama` nas Definições. Modelos pequenos seguem pior as regras do JSON; recomenda-se ≥ 8B.
+
+### Jogar com amigos (LAN / mesma rede)
+
+O servidor escuta em `0.0.0.0:8787`. Os amigos abrem `http://<o-teu-IP>:8787`. Com `ALLOW_CLIENT_KEYS=true` (padrão) **cada jogador usa a sua própria chave**, colada nas Definições dele.
+
+> ⚠️ Se publicares o servidor na internet, define `ALLOW_CLIENT_KEYS=false` ou protege-o: o servidor faz chamadas à IA em nome de quem lá jogar.
+
+### Controlos
+
+`WASD`/setas andar · `Shift` correr · `E` interagir · `Enter` chat com jogadores · `M` missões · `I` inventário · `N` caderno · `P` telemóvel (táxi) · `Esc` fechar
+
+A interface está disponível em português e inglês; os NPCs falam sempre inglês e adaptam-se ao teu nível CEFR.
+
+## 🧱 Como funciona
+
+```
+client/            Vite + Phaser 3 (mundo) + DOM (HUD, diálogos, menus)
+  src/scenes/      WorldScene: mapa, física, peões, trânsito, câmaras, GPS
+  src/ui/          hud, dialog (conversa com IA), panels, screens
+  src/state.js     estado, sobrevivência, aplicar ações, XP, vocabulário, save (localStorage)
+server/            Node + Express + ws
+  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config
+  prompts.js       constrói o prompt do NPC (personagem, cena, nível, regras, formato)
+  llm.js           cliente multi-provedor + parsing robusto de JSON
+  mock.js          NPC offline por regras
+  multiplayer.js   presença, posições, chat de proximidade
+shared/            usado por cliente E servidor
+  world.js         mapa (estradas, edifícios, portas)
+  npcs.js          personagens
+  missions.js      missões, contrato de ações, validação, gerador diário
+  data.js          catálogos/preços, níveis CEFR, profissões
+```
+
+**Como um NPC "age":** o modelo devolve sempre JSON:
+
+```json
+{ "reply": "Two croissants, coming right up!", "actions": [{"type":"sell","item":"croissant","qty":2,"unitPrice":3.5}],
+  "feedback": {"score": 72, "corrected": "Can I have two croissants, please?", "tips": ["..."], "newWords": [...]},
+  "suggestions": ["To go, please."], "translation": "..." }
+```
+
+O jogo **valida** cada ação (`shared/missions.js → validateAction`): só ações permitidas na cena, preços dentro do catálogo (±30%), regateio do táxi entre $35 e $100, conta bancária só com morada e telefone, contratação só com nível A2 + requisitos. Pagamentos recusados voltam ao NPC como `[GAME: Payment DECLINED…]` para ele reagir.
+
+## 🤝 Contribuir
+
+O projecto é jovem e há espaço para todo o tipo de contribuição — **não precisas de ser programador de jogos, nem sequer programador.** Professores, tradutores, escritores e artistas são tão bem-vindos como quem escreve código.
+
+### Boas primeiras contribuições
+
+| Se gostas de… | Podes… | Onde |
+|---|---|---|
+| 🌍 Línguas | Traduzir a interface para francês, espanhol ou a tua língua | `client/src/i18n.js` |
+| ✍️ Escrita | Criar uma personagem nova, com personalidade e maneira de falar | `shared/npcs.js` |
+| 🎯 Ensino | Desenhar uma missão à volta de uma situação real (farmácia, correios, chamada do senhorio…) | `TEMPLATES` em `shared/missions.js` |
+| 🏙️ Criar mundos | Acrescentar um local à cidade, com a sua loja e os seus preços | `shared/world.js`, `shared/data.js` |
+| 🎨 Pixel art | Desenhar sprites e tiles CC0 para substituir as formas coloridas | `client/src/scenes/WorldScene.js` |
+| 🧠 Ciência da aprendizagem | Trocar os flashcards simples por repetição espaçada a sério (SM-2) | `client/src/ui/panels.js` |
+| 🤖 Prompts | Tornar os NPCs mais naturais ou mais fiáveis com modelos locais pequenos | `server/prompts.js`, `server/mock.js` |
+| 📱 Front-end | Acrescentar um joystick virtual para telemóvel | `client/src/` |
+
+Acrescentar conteúdo é sobretudo dados, não trabalho de motor:
+
+- **Novo local:** acrescenta em `shared/world.js` (`LOCATIONS`), o NPC em `shared/npcs.js`, o mapeamento em `LOCATION_NPC` e, se vender coisas, o catálogo em `shared/data.js`.
+- **Nova missão:** cria um template em `TEMPLATES` (`shared/missions.js`) com `objective` (instruções ao NPC), `goal` (texto para o jogador em pt/en), `actions`, `vocab`, `reward` e `isComplete`. Junta-o ao `generateDaily` ou à `STORY`.
+- **Novo país/língua:** os textos de NPC e prompts estão separados por destino-alvo — o próximo passo é parametrizar `CITY`, catálogos e personas por `destination`.
+
+### Fluxo de desenvolvimento
+
+```bash
+npm run dev    # servidor com reload + Vite em http://localhost:5173
+npm test       # testes (parsing, validação, prompts, mock)
+```
+
+1. Faz fork do repositório e cria um branch para a tua alteração.
+2. Corre `npm run dev`. O modo mock deixa-te trabalhar sem gastar créditos de API.
+3. Corre `npm test` antes de abrir o pull request.
+4. Abre um PR e descreve o que mudou. Um screenshot ajuda em tudo o que seja visual.
+
+Não sabes por onde começar, ou tens uma ideia? [Abre uma issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — perguntas e sugestões são bem-vindas, em inglês, português ou francês.
+
+### 🗺️ Roadmap
+
+- [ ] Interiores dos edifícios e sprites/tiles em pixel-art (CC0)
+- [ ] Missões multijogador cooperativas (ex.: um jogador pede direções, o outro explica) e "jobs" partilhados
+- [ ] Teste de colocação (placement) inicial com a IA
+- [ ] Mais destinos: 🇬🇧 Londres, 🇨🇦 Toronto, 🇦🇺 Sydney, e outras línguas (🇫🇷 🇪🇸)
+- [ ] Transportes públicos, carro próprio, contas (luz, telefone), compras online
+- [ ] Repetição espaçada a sério (SM-2) e relatórios de progresso
+- [ ] Persistência do multiplayer (servidor dedicado + contas opcionais)
+- [ ] Modo mobile (joystick virtual)
+
+## ⭐ Apoia o projecto
+
+Se achas que aprender uma língua devia parecer-se com viver num sítio e não com preencher exercícios, dá uma estrela ao repositório e partilha-o com alguém que esteja a aprender inglês. Ajuda outros contribuidores a encontrarem o projecto.
+
+## 📄 Licença
+
+[MIT](LICENSE) — usa, faz fork, ensina com ele.
