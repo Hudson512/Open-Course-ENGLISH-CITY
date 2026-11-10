@@ -148,7 +148,7 @@ kbd { background: var(--accent); color: #111; border-radius: 5px; padding: 1px 7
 .dlg-banner { margin: 0 14px 8px; padding: 10px 12px; border-radius: 10px; background: linear-gradient(90deg, rgba(46, 213, 115, .25), rgba(25, 227, 177, .1)); border: 1px solid var(--good); font-size: 13px; animation: slideIn .3s; }
 .dlg-sugg { padding: 0 12px 6px; display: flex; flex-wrap: wrap; gap: 4px; } .dlg-sugg .chip { background: rgba(255, 211, 42, .15); color: #fff3c4; border-radius: 10px; padding: 6px 10px; }
 .dlg-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); }
-.mic { font-size: 18px; padding: 0 12px; } .mic.rec { background: var(--bad); animation: blink 1s infinite; }
+.mic { font-size: 18px; padding: 0 12px; touch-action: none; user-select: none; -webkit-user-select: none; } .mic.rec { background: var(--bad); animation: blink 1s infinite; }
 .dlg-foot { padding: 0 12px 10px; display: flex; gap: 8px; align-items: flex-start; }
 .dlg-vocab { display: flex; flex-wrap: wrap; gap: 2px; max-height: 54px; overflow: auto; }
 .dlg-vocab .chip { font-size: 11px; padding: 3px 8px; color: #b8d8ff; }

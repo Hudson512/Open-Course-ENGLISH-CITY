@@ -83,23 +83,53 @@ export function stopSpeaking() {
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 export const micSupported = !!SR;
 
-export function listen({ onPartial, onFinal, onEnd, onError }) {
+// Hold-to-talk: recording goes on until stop() is called, however long the speaker pauses.
+// The browser's recogniser gives up after a few seconds of silence, so while the player is still
+// holding the button it is started again and the text is kept.
+//   onPartial(text)  what has been heard so far
+//   onDone(text)     once, after stop(): everything that was said ('' if nothing)
+// Returns { stop, cancel }: stop() finishes and delivers the text, cancel() throws it away.
+export function listen({ onPartial, onDone, onError }) {
   if (!SR) { onError?.('not-supported'); return null; }
-  const r = new SR();
-  r.lang = cityLang();
-  r.interimResults = true;
-  r.maxAlternatives = 1;
-  let finalText = '';
-  r.onresult = e => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const res = e.results[i];
-      if (res.isFinal) finalText += res[0].transcript; else interim += res[0].transcript;
-    }
-    onPartial?.(finalText + interim);
+  let held = true, cancelled = false, finished = false;
+  let said = '';                 // finished sentences from earlier rounds
+  let round = '';                // what the current round has heard (final + still changing)
+  let r = null;
+
+  const join = (a, b) => (a && b ? `${a} ${b}` : a || b).trim();
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (!cancelled) onDone?.(join(said, round));
   };
-  r.onerror = e => onError?.(e.error);
-  r.onend = () => { if (finalText) onFinal?.(finalText.trim()); onEnd?.(); };
-  r.start();
-  return r;
+  const start = () => {
+    r = new SR();
+    r.lang = cityLang();
+    r.continuous = true;
+    r.interimResults = true;
+    r.maxAlternatives = 1;
+    r.onresult = e => {
+      let text = '';
+      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+      round = text.trim();
+      onPartial?.(join(said, round));
+    };
+    r.onerror = e => {
+      if (e.error === 'no-speech' || e.error === 'aborted') return;   // a pause, or our own stop
+      held = false; cancelled = true;
+      onError?.(e.error);
+    };
+    r.onend = () => {
+      if (!held) return finish();
+      said = join(said, round); round = '';
+      try { start(); } catch { held = false; finish(); }
+    };
+    r.start();
+  };
+  try { start(); } catch (e) { onError?.(e.name || 'error'); return null; }
+
+  return {
+    stop() { if (!held) return; held = false; try { r.stop(); } catch { finish(); } },
+    cancel() { cancelled = true; held = false; try { r.abort(); } catch { /* already stopped */ } }
+  };
 }

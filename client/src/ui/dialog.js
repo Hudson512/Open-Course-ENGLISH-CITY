@@ -28,7 +28,8 @@ export function openDialog(mission, { onClose } = {}) {
   const input = h('input', { class: 'dlg-input', placeholder: t('typeHere'), maxlength: 400, autocomplete: 'off' });
   const sugg = h('div', { class: 'dlg-sugg hidden' });
   const banner = h('div', { class: 'dlg-banner hidden' });
-  const micBtn = h('button', { class: 'mic', title: t('mic'), onclick: () => toggleMic() }, '🎤');
+  const micBtn = h('button', { class: 'mic', title: t('holdToTalk') }, '🎤');
+  holdToTalk(micBtn);
   const sendBtn = h('button', { class: 'primary', onclick: () => send() }, t('send'));
   const hintBtn = h('button', { class: 'ghost small', onclick: () => sugg.classList.toggle('hidden') }, `💡 ${t('hint')}`);
   const vocabRow = h('div', { class: 'dlg-vocab' }, info.vocab.slice(0, 10).map(v => h('span', { class: 'chip', title: 'click', onclick: () => { input.value += (input.value ? ' ' : '') + v.replace('…', ''); input.focus(); } }, v)));
@@ -177,16 +178,43 @@ export function openDialog(mission, { onClose } = {}) {
     requestTurn(el);
   }
 
-  function toggleMic() {
-    if (current.rec) { current.rec.stop(); return; }
-    stopSpeaking();
-    micBtn.classList.add('rec');
-    current.rec = listen({
-      onPartial: txt => { input.value = txt; },
-      onFinal: txt => { input.value = txt; send(); },
-      onEnd: () => { micBtn.classList.remove('rec'); if (current) current.rec = null; },
-      onError: err => { addGame(`🎤 ${err}`, 'bad'); }
-    });
+  // The microphone works like a voice message: hold the button (or Space/Enter on it) to record,
+  // release to send. Pauses do not send anything, so the player can take the time they need.
+  function holdToTalk(btn) {
+    let startedAt = 0;
+    const begin = () => {
+      if (!current || current.rec || current.busy) return;
+      stopSpeaking();
+      startedAt = Date.now();
+      input.value = '';
+      input.placeholder = t('listening');
+      btn.classList.add('rec');
+      const mine = current;
+      const done = () => { btn.classList.remove('rec'); input.placeholder = t('typeHere'); mine.rec = null; };
+      mine.rec = listen({
+        onPartial: txt => { if (current === mine) input.value = txt; },
+        onDone: txt => {
+          const quick = Date.now() - startedAt < 400;
+          done();
+          if (current !== mine) return;
+          input.value = txt;
+          if (txt) send();
+          else addGame(`🎤 ${t(quick ? 'holdToTalk' : 'heardNothing')}`);
+        },
+        onError: err => { done(); if (current === mine) addGame(`🎤 ${['not-allowed', 'service-not-allowed'].includes(err) ? t('micBlocked') : err}`, 'bad'); }
+      });
+      if (!mine.rec) done();
+    };
+    const end = () => current?.rec?.stop();
+    const cancel = () => { if (!current?.rec) return; current.rec.cancel(); current.rec = null; btn.classList.remove('rec'); input.value = ''; input.placeholder = t('typeHere'); };
+
+    btn.addEventListener('pointerdown', e => { if (e.button) return; e.preventDefault(); btn.setPointerCapture?.(e.pointerId); begin(); });
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointercancel', cancel);
+    btn.addEventListener('contextmenu', e => e.preventDefault());     // a long press on a phone
+    btn.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); begin(); } if (e.key === 'Escape') cancel(); });
+    btn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); end(); } });
+    btn.addEventListener('blur', end);
   }
 }
 
@@ -195,7 +223,7 @@ export function closeDialog(silent = false) {
   const c = current;
   current = null;
   stopSpeaking();
-  c.rec?.stop?.();
+  c.rec?.cancel?.();
   c.panel.remove();
   S.save();
   if (!silent) c.onClose?.({ completed: [...c.completed], done: c.done, mission: c.mission });
