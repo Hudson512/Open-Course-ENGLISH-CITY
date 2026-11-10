@@ -7,7 +7,7 @@ import { modalOpen, closeModal, missionsPanel, inventoryPanel, notebookPanel, ph
 import { mountHUD, scheduleRender, showPrompt, toast } from './hud.js';
 import { sendChat, myId } from '../net.js';
 import { api, getSettings } from '../api.js';
-import { locationById } from '../../../shared/world.js';
+import { getPack, socialMission } from '../pack.js';
 
 let scene = null;
 let chatInput, chatLog;
@@ -25,23 +25,22 @@ export const ui = {
       const p = target.ped;
       const st = S.getState();
       if (st.missions.chattedToday.includes(p.name)) toast(t('alreadyChatted'));
-      startMission({ uid: `ped-${p.name}`, templateId: 'smalltalk', params: { name: p.name, persona: p.persona, emoji: p.emoji, gender: p.gender, role: 'Local' }, kind: 'social' });
+      startMission({ uid: `ped-${p.name}`, templateId: socialMission(), params: { name: p.name, persona: p.persona, emoji: p.emoji, voice: p.voice }, kind: 'social' });
     }
   }
 };
 
 function startMission(m) {
-  openDialog(m, { onClose: ({ completed }) => afterDialog(m, completed) });
+  openDialog(m, { onClose: ({ completed, done }) => afterDialog(m, completed, done) });
 }
 
-function afterDialog(m, completed) {
+function afterDialog(m, completed, done) {
   scheduleRender();
-  const st = S.getState();
-  // Arrival: taxi ride to the chosen lodging
-  if (completed.includes(m.uid) && m.templateId === 'arrival_taxi') {
-    const dest = locationById(st.pendingDestination || 'hotel');
-    taxiRide(dest, () => toast(`${t('arrivedAt')} ${dest.name}. ${t('enterToCheckin')}`, 'good'));
-  }
+  if (!completed.includes(m.uid)) return;
+  // The player agreed where to go (e.g. with the taxi driver on arrival): ride there.
+  const pick = done.find(a => a.kind === 'choose');
+  const dest = pick && getPack().places[pick.value];
+  if (dest) taxiRide(dest, () => toast(`${t('arrivedAt')} ${dest.name}. ${t('enterToCheckin')}`, 'good'));
 }
 
 function taxiRide(loc, after) {
@@ -108,7 +107,7 @@ export function mountGameUI() {
     else if (type === 'chat') {
       addChat(data);
       if (data.from && data.from !== myId()) scene?.bubble?.(data.from, data.text);
-    } else if (type === 'chat_ack' && data.heard > 0) S.bumpCounter('online_chat');
+    } else if (type === 'chat_ack' && data.heard > 0) S.bumpCounter('online_messages');
     else if (type === 'newday') toast(`📅 ${t('newDay')} — ${t('day')} ${data}`);
     else if (type === 'mission') scheduleRender();
   });

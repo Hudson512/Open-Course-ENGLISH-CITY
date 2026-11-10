@@ -1,0 +1,33 @@
+# Maple City street map. Positions are in cells (1 cell = 20 px), [column, row] from the top-left corner.
+# Places you can enter are in places.yaml; this file only has what is around them.
+cell: 20
+size: [120, 95]
+
+roads:                       # each road crosses the whole map (the original is 96 px wide; 5 cells = 100 px)
+  - { row: 15, width: 5 }
+  - { row: 45, width: 5 }
+  - { row: 75, width: 5 }
+  - { col: 15, width: 5 }
+  - { col: 50, width: 5 }
+  - { col: 85, width: 5 }
+
+park: { name: Central Park, at: [22, 52], size: [26, 21] }
+
+decor:                       # buildings you cannot enter
+  - { at: [2, 2], size: [11, 11] }
+  - { at: [35, 3], size: [13, 10] }
+  - { at: [57, 3], size: [26, 10] }
+  - { at: [92, 3], size: [26, 10] }
+  - { at: [109, 22], size: [9, 20] }
+  - { at: [2, 52], size: [11, 21] }
+  - { at: [92, 52], size: [12, 10] }
+  - { at: [106, 52], size: [12, 21] }
+  - { at: [57, 64], size: [26, 9] }
+  - { at: [92, 64], size: [12, 9] }
+  - { at: [2, 82], size: [11, 11] }
+  - { at: [22, 82], size: [26, 11] }
+  - { at: [57, 82], size: [26, 11] }
+  - { at: [92, 82], size: [26, 11] }
+
+spawn: [16.5, 35]
+taxi_stand: [17.25, 30]

@@ -1,0 +1,51 @@
+# Maple City — the first city of English City, written as a city pack.
+# Format: docs/city-pack-spec.md.
+pack: 1                      # format version
+id: maple-city
+version: 1.0.0
+name: Maple City
+country: United States
+flag: 🇺🇸
+language: en-US              # what the characters speak
+currency: { symbol: "$", code: USD }
+
+start:
+  money: 600
+  mission: arrival_taxi
+
+# The main story, in order. Each mission is described in missions.yaml.
+story: [arrival_taxi, lodging, get_phone, open_bank, job_interview]
+
+# Every day the game picks `count` different entries from this pool.
+daily:
+  count: 3
+  pool:
+    - { mission: shop, with: { place: bakery,  items: { pick: 2, qty: [1, 2] } } }
+    - { mission: shop, with: { place: grocery, items: { pick: 3, qty: [1, 2], where: food } } }
+    - { mission: shop, with: { place: cafe,    items: { pick: 2 } } }
+    - { mission: shop, with: { place: diner,   items: { pick: 1, where: "food > 30", plus: [soda, tip] } } }
+    - mission: barber_cut
+      with:
+        style:
+          one_of:
+            - short fade with a little off the top
+            - just a trim, keep the length
+            - buzz cut, number 2 clippers
+            - haircut and beard trim
+            - clean shave
+    - { mission: chat_people, with: { count: 2 } }
+    - { mission: online_chat }
+
+# Where each profession works in this city, the job title and the pay per shift.
+# The list of professions itself belongs to the game (the player picks one before travelling).
+jobs:
+  software_developer: { workplace: offices, wage: 220, title: Junior Software Developer }
+  nurse:              { workplace: clinic,  wage: 190, title: Nurse Assistant }
+  teacher:            { workplace: offices, wage: 170, title: Teaching Assistant }
+  accountant:         { workplace: bank,    wage: 200, title: Junior Accountant }
+  chef:               { workplace: diner,   wage: 150, title: Line Cook }
+  sales:              { workplace: grocery, wage: 140, title: Sales Associate }
+  engineer:           { workplace: offices, wage: 230, title: Junior Engineer }
+  designer:           { workplace: offices, wage: 190, title: Junior Designer }
+  barber:             { workplace: barber,  wage: 130, title: Barber }
+  other:              { workplace: offices, wage: 140, title: Office Assistant }

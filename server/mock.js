@@ -1,95 +1,93 @@
 // Offline rule-based NPC so the game runs (and can be tested) without any API key.
-import { CATALOG, TAXI, findCatalogItem } from '../shared/data.js';
-import { resolveNpc } from './prompts.js';
-import { resolve, TEMPLATES } from '../shared/missions.js';
+// It knows nothing about a particular city: it plays whatever the mission's actions allow.
+import { viewMission, catalogOf } from '../shared/engine.js';
+import { money } from '../shared/pack.js';
+import { missionNpc } from './prompts.js';
 
 const NUM_WORDS = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
 
-export function mockTurn({ mission, state, history = [] }) {
-  const npc = resolveNpc(mission);
+export function mockTurn({ pack, mission, state, history = [] }) {
+  const view = viewMission(pack, mission, state);
+  const npc = missionNpc(view);
   const players = history.filter(h => h.role === 'player');
   const last = players[players.length - 1]?.text || '';
   const all = players.map(p => p.text).join(' ').toLowerCase();
   const lastLower = last.toLowerCase();
   const turns = players.length;
-  const done = history.filter(h => h.role === 'game').map(h => h.text).join(' ');
   const actions = [];
+  // the action of each kind this mission allows, e.g. by.price = 'agree_price'
+  const by = Object.fromEntries(view.allow.map(id => [pack.actions[id].kind, id]));
+  const def = kind => pack.actions[by[kind]];
+  const $ = n => money(pack, n);
   let reply;
 
-  const tpl = TEMPLATES[mission.templateId];
-  const place = resolve(tpl, 'location', mission.params);
-
   if (!turns) {
-    reply = greeting(mission.templateId, npc.name);
-  } else {
-    switch (mission.templateId) {
-      case 'arrival_taxi': {
-        const dest = /apart|oak/.test(all) ? 'apartment' : /hotel|sunrise/.test(all) ? 'hotel' : null;
-        const nums = (lastLower.match(/\d+/g) || []).map(Number);
-        const offer = nums.length ? nums[nums.length - 1] : null;
-        if (!dest) reply = 'Sure, buddy. But where are you going? Hotel Sunrise or Oak Street Apartments?';
-        else if (offer == null) reply = `${dest === 'hotel' ? 'Hotel Sunrise' : 'Oak Street'}, got it. That's $${TAXI.start}. Deal?`;
-        else if (offer < TAXI.min) reply = `$${offer}? No way! Tell you what, I can do $${TAXI.min + 10}.`;
-        else {
-          reply = `OK, $${offer}, deal! Put your luggage in the trunk. Hop in!`;
-          actions.push({ type: 'set_destination', place: dest }, { type: 'agree_price', amount: offer });
-        }
-        if (/^(yes|ok|deal|sure|fine)/.test(lastLower) && dest && !actions.length) {
-          reply = 'Great! Hop in!';
-          actions.push({ type: 'set_destination', place: dest }, { type: 'agree_price', amount: TAXI.start });
-        }
-        break;
-      }
-      case 'lodging': {
-        const isHotel = mission.params.place === 'hotel';
-        if (turns < 2) reply = isHotel ? 'Welcome! May I have your name, and how many nights will you stay?' : 'Hello. So, why did you come to Maple City? Do you work?';
-        else {
-          reply = isHotel ? 'Perfect, you are all set. Here is your key card. Check-out is at 11 am.' : 'Alright, you seem like a good tenant. Here are your keys. No loud music after 10 pm!';
-          const nights = Number((lastLower.match(/\d+/) || [])[0]) || 2;
-          actions.push(isHotel ? { type: 'rent', place: 'hotel', price: 110, nights } : { type: 'rent', place: 'apartment', price: 180 });
-        }
-        break;
-      }
-      case 'get_phone':
-      case 'shop': {
-        const loc = place || 'phone_store';
-        const found = parseItems(loc, lastLower);
-        if (found.length) {
-          for (const f of found) actions.push({ type: loc === 'barber' || loc === 'clinic' ? 'service' : 'sell', item: f.item, qty: f.qty, unitPrice: f.price, price: f.price });
-          const total = found.reduce((s, f) => s + f.price * f.qty, 0);
-          reply = `Sure! ${found.map(f => `${f.qty} ${f.item}`).join(', ')}. That's $${total.toFixed(2)}. Anything else?`;
-        } else if (/(no|that's all|thats all|thank|bye)/.test(lastLower)) {
-          reply = 'Thank you! Have a great day!';
-          actions.push({ type: 'end' });
-        } else {
-          const some = Object.keys(CATALOG[loc] || {}).slice(0, 3).join(', ');
-          reply = `Sorry, what would you like? We have ${some}...`;
-        }
-        break;
-      }
-      case 'barber_cut':
-        if (turns < 2) reply = 'Alright, how short on the sides? Clippers or scissors?';
-        else { reply = 'All done! Take a look in the mirror. That\'s $25.'; actions.push({ type: 'service', item: 'haircut', price: 25 }); }
-        break;
-      case 'open_bank':
-        if (turns < 2) reply = 'I can help with that. Can I see your passport, and what is your address?';
-        else { reply = 'Your checking account is open. Your debit card arrives in 5 days.'; actions.push({ type: 'open_account' }); }
-        break;
-      case 'job_interview': {
-        const qs = ['Tell me about yourself.', 'Why do you want this job?', 'What are your strengths?', 'And your weaknesses?', 'Where do you see yourself in five years?'];
-        if (turns < 5) reply = qs[turns - 1] || qs[0];
-        else { reply = 'Thank you. I am happy to say: you got the job! You start tomorrow at 9.'; actions.push({ type: 'hire', score: 75, jobTitle: '' }); }
-        break;
-      }
-      case 'work_shift':
-        if (turns < 3) reply = ['Good morning! What are you working on today?', 'OK. Any problems I should know about?'][turns - 1];
-        else { reply = 'Great work today. See you tomorrow!'; actions.push({ type: 'work_done', performance: 80 }); }
-        break;
-      default:
-        reply = ['Oh really? That\'s interesting!', 'Where are you from, by the way?', 'Nice! Do you like Maple City so far?', 'Cool. Well, it was nice talking to you!'][Math.min(turns - 1, 3)];
+    reply = greeting(by, npc.name, pack);
+  } else if (by.price || by.choose) {
+    // a ride: where to, and how much
+    const opts = by.choose ? def('choose').options : {};
+    const dest = Object.keys(opts).reverse().find(o => opts[o].some(w => all.includes(w))) || null;
+    const names = Object.keys(opts).map(o => pack.places[o]?.name || o);
+    const P = by.price ? def('price') : null;
+    const nums = (lastLower.match(/\d+/g) || []).map(Number);
+    const offer = nums.length ? nums[nums.length - 1] : null;
+    const go = amount => {
+      if (by.choose) actions.push({ type: by.choose, value: dest });
+      if (P) actions.push({ type: by.price, amount });
+    };
+    if (by.choose && !dest) reply = `Sure, buddy. But where are you going? ${names.join(' or ')}?`;
+    else if (!P) { reply = 'Got it. Hop in!'; go(); }
+    else if (offer == null) reply = `${pack.places[dest]?.name || 'Sure'}, got it. That's ${$(P.start)}. Deal?`;
+    else if (offer < P.min) reply = `${$(offer)}? No way! Tell you what, I can do ${$(P.min + 10)}.`;
+    else { reply = `OK, ${$(offer)}, deal! Put your luggage in the trunk. Hop in!`; go(offer); }
+    if (P && /^(yes|ok|deal|sure|fine)/.test(lastLower) && !actions.length && (dest || !by.choose)) {
+      reply = 'Great! Hop in!';
+      go(P.start);
     }
+  } else if (by.rent) {
+    const L = view.place?.lodging || {};
+    const nightly = L.per === 'night';
+    if (turns < 2) reply = nightly ? 'Welcome! May I have your name, and how many nights will you stay?' : `Hello. So, why did you come to ${pack.name}? Do you work?`;
+    else {
+      reply = nightly ? 'Perfect, you are all set. Here is your key card. Check-out is at 11 am.' : 'Alright, you seem like a good tenant. Here are your keys. No loud music after 10 pm!';
+      const nights = Number((lastLower.match(/\d+/) || [])[0]) || 2;
+      actions.push(nightly ? { type: by.rent, price: L.price, nights } : { type: by.rent, price: L.price });
+    }
+  } else if (by.sell || by.service) {
+    const found = [...parseItems(view.place, 'sell', by.sell, lastLower), ...parseItems(view.place, 'service', by.service, lastLower)];
+    const goal = pack.missions[mission.templateId].complete;
+    const cat = catalogOf(view.place);
+    if (found.length) {
+      for (const f of found) actions.push({ type: f.type, item: f.item, qty: f.qty, unitPrice: f.price, price: f.price });
+      const total = found.reduce((s, f) => s + f.price * f.qty, 0);
+      reply = `Sure! ${found.map(f => `${f.qty} ${f.item}`).join(', ')}. That's ${pack.currency.symbol}${total.toFixed(2)}. Anything else?`;
+    } else if (by.service && goal?.did === by.service && turns >= 2) {
+      // a mission that is simply "get the service done": do the first one on the list
+      const [item, it] = Object.entries(view.place.services)[0];
+      reply = `All done! Take a look in the mirror. That's ${$(it.price)}.`;
+      actions.push({ type: by.service, item, price: it.price });
+    } else if (by.service && goal?.did === by.service) {
+      reply = 'Alright, how short on the sides? Clippers or scissors?';
+    } else if (/(no|that's all|thats all|thank|bye)/.test(lastLower)) {
+      reply = 'Thank you! Have a great day!';
+      if (by.end) actions.push({ type: by.end });
+    } else {
+      reply = `Sorry, what would you like? We have ${Object.keys(cat).slice(0, 3).join(', ')}...`;
+    }
+  } else if (by.grant) {
+    if (turns < 2) reply = 'I can help with that. Can I see your passport, and what is your address?';
+    else { reply = 'Everything is in order. You are all set!'; actions.push({ type: by.grant }); }
+  } else if (by.hire) {
+    const qs = ['Tell me about yourself.', 'Why do you want this job?', 'What are your strengths?', 'And your weaknesses?', 'Where do you see yourself in five years?'];
+    if (turns < 5) reply = qs[turns - 1] || qs[0];
+    else { reply = 'Thank you. I am happy to say: you got the job! You start tomorrow at 9.'; actions.push({ type: by.hire, score: 75, jobTitle: '' }); }
+  } else if (by.work_done) {
+    if (turns < 3) reply = ['Good morning! What are you working on today?', 'OK. Any problems I should know about?'][turns - 1];
+    else { reply = 'Great work today. See you tomorrow!'; actions.push({ type: by.work_done, performance: 80 }); }
+  } else {
+    reply = ['Oh really? That\'s interesting!', 'Where are you from, by the way?', `Nice! Do you like ${pack.name} so far?`, 'Cool. Well, it was nice talking to you!'][Math.min(turns - 1, 3)];
   }
-  void done;
+
   return {
     reply,
     emotion: actions.length ? 'happy' : 'neutral',
@@ -100,33 +98,31 @@ export function mockTurn({ mission, state, history = [] }) {
   };
 }
 
-function greeting(t, name) {
-  const g = {
-    arrival_taxi: 'Hey there, welcome to Maple City! Need a ride? Where are you headed?',
-    lodging: 'Good afternoon! How can I help you?',
-    get_phone: 'Hi! Welcome to PhoneHub. Looking for a phone plan?',
-    open_bank: 'Good morning. How may I help you today?',
-    job_interview: 'Hello, please have a seat. Shall we start the interview?',
-    work_shift: 'Morning! Ready for today?',
-    barber_cut: 'What\'s up! Have a seat. What are we doing today?',
-    shop: 'Hi there! What can I get for you?'
-  };
-  return g[t] || `Hi, I'm ${name}. How's it going?`;
+function greeting(by, name, pack) {
+  if (by.price || by.choose) return `Hey there, welcome to ${pack.name}! Need a ride? Where are you headed?`;
+  if (by.rent) return 'Good afternoon! How can I help you?';
+  if (by.sell) return 'Hi there! What can I get for you?';
+  if (by.service) return 'What\'s up! Have a seat. What are we doing today?';
+  if (by.grant) return 'Good morning. How may I help you today?';
+  if (by.hire) return 'Hello, please have a seat. Shall we start the interview?';
+  if (by.work_done) return 'Morning! Ready for today?';
+  return `Hi, I'm ${name}. How's it going?`;
 }
 
-function parseItems(loc, text) {
-  const cat = CATALOG[loc] || {};
+// Items of the place named in what the player said, with quantities ("two bagels").
+function parseItems(place, kind, type, text) {
+  if (!type) return [];
+  const cat = catalogOf(place, kind);
   const out = [];
   for (const key of Object.keys(cat).sort((a, b) => b.length - a.length)) {
     const k = key.toLowerCase();
     const singular = k.replace(/s$/, '');
     if (text.includes(k) || text.includes(singular)) {
-      if (out.some(o => o.item.includes(k))) continue;
-      const re = new RegExp(`(\\d+|a|an|one|two|three|four|five|six)\\s+(?:\\w+\\s+)?${singular.split(' ')[0]}`);
+      if (out.some(o => o.item.toLowerCase().includes(k))) continue;
+      const re = new RegExp(`(\\d+|a|an|one|two|three|four|five|six)\\s+(?:\\w+\\s+)?${singular.split(' ')[0].replace(/[^\w]/g, '.')}`);
       const m = text.match(re);
       const qty = m ? Number(m[1]) || NUM_WORDS[m[1]] || 1 : 1;
-      const it = findCatalogItem(loc, key);
-      out.push({ item: key, qty, price: it.price });
+      out.push({ type, item: key, qty, price: cat[key].price });
     }
   }
   return out;

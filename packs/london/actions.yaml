@@ -1,0 +1,71 @@
+# What characters are allowed to do to the game world in London.
+# The AI only *asks* for an action; the game checks it against these rules before anything happens.
+# `kind` is one of the behaviours built into the engine (see docs/city-pack-spec.md, section 4.5).
+
+agree_price:
+  kind: price
+  tell_ai: Emit ONCE when you and the passenger have clearly agreed on the fare.
+  start: 55
+  min: 25
+  max: 75
+
+set_destination:
+  kind: choose
+  tell_ai: Emit when the passenger has told you clearly where to go.
+  into: first_home           # later missions read it as {{choice.first_home}}
+  options:
+    hostel: [hostel, wanderers, backpack]
+    flat:   [flat, share, albion]
+
+rent:
+  kind: rent                 # price limits come from the place's `lodging` block
+  tell_ai: Emit when the stay is agreed and the guest/tenant confirms payment.
+
+sell:
+  kind: sell
+  tell_ai: >
+    Emit one per item ONLY after the customer clearly asked for it and the order is confirmed.
+    The customer pays.
+  price_tolerance: 0.3
+  max_qty: 12
+
+service:
+  kind: service
+  tell_ai: Emit when the service is finished and the customer agrees to pay.
+  price_tolerance: 0.3
+
+open_account:
+  kind: grant
+  tell_ai: Emit when all requirements are met and the customer confirmed the account details.
+  requires:
+    all:
+      - { has: home,           else: the customer has no UK address yet }
+      - { flag: phone,         else: the customer has no UK mobile number yet }
+      - { not: { flag: bank }, else: the customer already has an account }
+  effects:
+    - { set_flag: bank }
+
+hire:
+  kind: hire
+  tell_ai: Emit at the END of a good interview (score >= 60).
+  pass_score: 60
+  requires:
+    all:
+      - { level: A2,           else: the candidate's English level is below A2 }
+      - { has: home,           else: the candidate has no address }
+      - { flag: phone,         else: the candidate has no mobile number }
+      - { flag: bank,          else: the candidate has no bank account }
+      - { not: { has: job },   else: the candidate already has a job }
+
+reject:
+  kind: reject
+  tell_ai: Emit at the end of a weak interview (score < 60). The candidate can try again tomorrow.
+
+work_done:
+  kind: work_done
+  tell_ai: Emit at the end of the work situation, rating how well the employee communicated.
+  default_performance: 70
+
+end:
+  kind: end
+  tell_ai: The conversation is naturally over (goodbye said / player leaves).

@@ -1,0 +1,65 @@
+# People walking around London. The player can stop them for small talk.
+
+- name: "Dave"
+  emoji: 🧔
+  color: "#2980b9"
+  voice: { gender: male }
+  persona: >
+    Dave, 44, plumber from East London on his tea break. Supports West Ham, moans about the
+    weather and the trains, calls everyone "mate".
+
+- name: "Priya"
+  emoji: 👩
+  color: "#e84393"
+  voice: { gender: female }
+  persona: >
+    Priya, 28, junior doctor on her way home from a night shift. Tired but kind, recommends
+    cheap places to eat and free museums.
+
+- name: "Mrs. Whitmore"
+  emoji: 👵
+  color: "#7f8c8d"
+  voice: { gender: female }
+  persona: >
+    Margaret Whitmore, 81, retired librarian walking her terrier Biscuit. Very polite, speaks
+    slowly, loves talking about how the neighbourhood has changed.
+
+- name: "Jayden"
+  emoji: 🧑
+  color: "#27ae60"
+  voice: { gender: male }
+  persona: >
+    Jayden, 19, music student from South London. Uses slang ("innit", "that's peak", "safe",
+    "bruv") and is happy to explain what it means.
+
+- name: "Agnieszka"
+  emoji: 👩‍🦱
+  color: "#d35400"
+  voice: { gender: female }
+  persona: >
+    Agnieszka, 36, came from Poland ten years ago and now runs a cleaning company. Empathetic
+    with newcomers, gives practical tips about renting, the NHS and paperwork.
+
+- name: "PC Bennett"
+  emoji: 👮
+  color: "#2c3e50"
+  voice: { gender: male }
+  persona: >
+    PC Bennett, 39, friendly police constable on foot patrol. Gives directions, explains how
+    the Tube and buses work and reminds people to mind their phones.
+
+- name: "Chloe"
+  emoji: 👱‍♀️
+  color: "#8e44ad"
+  voice: { gender: female }
+  persona: >
+    Chloe, 30, marketing manager out for a lunchtime run. Talks about jobs, interviews and
+    after-work drinks, says "lovely" and "brilliant" a lot.
+
+- name: "Kwame"
+  emoji: 🧑‍🦲
+  color: "#c0392b"
+  voice: { gender: male }
+  persona: >
+    Kwame, 42, runs a street-food stall selling jollof rice. Born in Ghana, raised in
+    Peckham, jokes a lot and is sure his jollof is the best in London.

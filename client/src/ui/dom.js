@@ -18,6 +18,5 @@ export function h(tag, attrs = {}, ...children) {
 }
 export const $ = sel => document.querySelector(sel);
 export function clear(el) { while (el.firstChild) el.firstChild.remove(); return el; }
-export const fmtMoney = n => `${n < 0 ? '−' : ''}$${Math.abs(n).toFixed(2)}`;
 export const fmtTime = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
 export function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }

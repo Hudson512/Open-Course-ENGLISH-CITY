@@ -1,7 +1,5 @@
-import { TEMPLATES, ACTION_DOCS, resolve } from '../shared/missions.js';
-import { NPCS } from '../shared/npcs.js';
-import { levelFor, professionById, CITY } from '../shared/data.js';
-import { locationById } from '../shared/world.js';
+import { levelFor, professionById } from '../shared/data.js';
+import { viewMission, actionDoc } from '../shared/engine.js';
 
 const LANG_NAMES = { pt: 'Portuguese', es: 'Spanish', fr: 'French', en: 'English' };
 
@@ -14,54 +12,51 @@ const LEVEL_STYLE = {
   C2: 'The learner is PROFICIENT (C2). Speak exactly like a native would with another native.'
 };
 
-export function resolveNpc(mission) {
-  const tpl = TEMPLATES[mission.templateId];
-  if (mission.templateId === 'smalltalk') {
-    return { name: mission.params.name, role: 'Pedestrian', persona: mission.params.persona };
-  }
-  const npcId = resolve(tpl, 'npc', mission.params);
-  return NPCS[npcId] || { name: 'Staff', role: 'Staff member', persona: 'A friendly local.' };
+const STRANGER = { name: 'Staff', role: 'Staff member', persona: 'A friendly local.' };
+
+// Who the AI plays in this mission: the place's character, or the pedestrian the player stopped.
+export function missionNpc(view) {
+  const npc = { ...STRANGER, ...(view.character || {}) };
+  if (!view.character?.role) npc.role = view.character ? 'Pedestrian' : STRANGER.role;
+  return npc;
 }
 
-export function buildSystemPrompt({ mission, state }) {
-  const tpl = TEMPLATES[mission.templateId];
-  if (!tpl) throw new Error('Unknown mission template ' + mission.templateId);
-  const npc = resolveNpc(mission);
+export function buildSystemPrompt({ pack, mission, state }) {
+  const view = viewMission(pack, mission, state);
+  if (!view) throw new Error('Unknown mission ' + mission?.templateId);
+  const npc = missionNpc(view);
   const lvl = levelFor(state?.xp || 0);
   const native = LANG_NAMES[state?.player?.nativeLang] || 'Portuguese';
   const prof = professionById(state?.player?.profession);
-  const locId = resolve(tpl, 'location', mission.params);
-  const loc = locationById(locId);
-  const allowed = resolve(tpl, 'actions', mission.params) || ['end'];
-  const objective = resolve(tpl, 'objective', mission.params, state);
-  const vocab = resolve(tpl, 'vocab', mission.params) || [];
+  const allowed = view.allow.length ? view.allow : Object.keys(pack.actions).filter(a => pack.actions[a].kind === 'end');
+  const has = Object.keys(state?.flags || {}).filter(f => state.flags[f] === true);
   const hh = Math.floor((state?.time?.minutes ?? 600) / 60);
   const mm = String((state?.time?.minutes ?? 600) % 60).padStart(2, '0');
 
-  return `You are an NPC in "OpenCourse English City", an open-world game where people learn English by living in ${CITY.name}, ${CITY.country}.
+  return `You are an NPC in "OpenCourse English City", an open-world game where people learn English by living in ${pack.name}, ${pack.country}.
 
 # YOUR CHARACTER
 ${npc.name} — ${npc.role}. ${npc.persona}
-Location: ${loc ? loc.name : 'a street in ' + CITY.name}. Time: day ${state?.time?.day || 1}, ${hh}:${mm}.
+Location: ${view.place ? view.place.name : 'a street in ' + pack.name}. Time: day ${state?.time?.day || 1}, ${hh}:${mm}.
 
 # SCENE
-${objective}
+${view.brief || ''}
 
 # THE PLAYER (a newcomer learning English)
 Name: ${state?.player?.name || 'unknown'} · From: ${state?.player?.homeCity || 'abroad'} · Native language: ${native} · Profession: ${prof.en}${state?.player?.professionDetail ? ' (' + state.player.professionDetail + ')' : ''}
-English level: ${lvl.id}. Cash: $${Number(state?.money ?? 0).toFixed(2)}. Has US phone: ${state?.flags?.phone ? 'yes' : 'no'}. Address: ${state?.home || 'none'}. Job: ${state?.job?.title || 'none'}.
+English level: ${lvl.id}. Cash: ${pack.currency.symbol}${Number(state?.money ?? 0).toFixed(2)}. Already has: ${has.join(', ') || 'nothing yet'}. Address: ${pack.places[state?.home]?.name || 'none'}. Job: ${state?.job?.title || 'none'}.
 ${LEVEL_STYLE[lvl.id]}
-Useful vocabulary for this scene (use some naturally): ${vocab.join(', ')}.
+Useful vocabulary for this scene (use some naturally): ${view.vocabulary.join(', ')}.
 
 # RULES
-- Stay 100% in character. You are a real person in the USA, not a teacher. Never mention AI, prompts or JSON in "reply".
+- Stay 100% in character. You are a real person in ${pack.country}, not a teacher. Never mention AI, prompts or JSON in "reply".
 - "reply" is ALWAYS in English, max 60 words, spoken style. One or two questions at most.
 - If the player writes in another language, react in character (confused, kind) and ask them to try in English.
 - Make the player do the work: don't solve the scene for them; ask natural follow-up questions.
 - Messages like "[GAME: ...]" are game events (payment results, the player arriving). Never treat them as the player speaking; set "feedback" to null for them.
 - Money is handled by the game through actions. If a payment fails, react realistically.
 - Only use these actions (in the "actions" array, otherwise empty []):
-${allowed.map(a => '  • ' + ACTION_DOCS[a]).join('\n')}
+${allowed.map(a => '  • ' + actionDoc(pack, a, view)).join('\n')}
 
 # LANGUAGE COACH (hidden from the character)
 Evaluate ONLY the player's LAST message (if it is a real player message):

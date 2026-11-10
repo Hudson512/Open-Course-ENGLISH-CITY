@@ -1,7 +1,6 @@
-// Top-down open world of Maple City.
+// Top-down open world, drawn from the city pack that is loaded.
 import Phaser from 'phaser';
-import { WORLD, ROADS, LOCATIONS, PARK, DECOR, TAXI_STAND } from '../../../shared/world.js';
-import { PEDESTRIANS } from '../../../shared/npcs.js';
+import { getPack, hex, arrivalPlace } from '../pack.js';
 import * as S from '../state.js';
 import { others, sendMove } from '../net.js';
 import { ui } from '../ui/ui.js';
@@ -14,7 +13,10 @@ export class WorldScene extends Phaser.Scene {
 
   create() {
     this.texts = [];
-    this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
+    this.map = getPack().map;
+    this.places = Object.values(getPack().places);
+    this.miniH = Math.round(200 * this.map.height / this.map.width);
+    this.physics.world.setBounds(0, 0, this.map.width, this.map.height);
     this.makeTextures();
     this.walls = [];
     this.drawCity();
@@ -79,7 +81,8 @@ export class WorldScene extends Phaser.Scene {
 
   drawCity() {
     const add = this.add;
-    add.rectangle(0, 0, WORLD.width, WORLD.height, 0x7cb342).setOrigin(0);
+    const { roads: ROADS, park, decor, taxiStand } = this.map;
+    add.rectangle(0, 0, this.map.width, this.map.height, 0x7cb342).setOrigin(0);
     // sidewalks then roads
     for (const r of ROADS) add.rectangle(r.x - 14, r.y - 14, r.w + 28, r.h + 28, 0xc8ccd0).setOrigin(0);
     for (const r of ROADS) add.rectangle(r.x, r.y, r.w, r.h, 0x3a3d42).setOrigin(0);
@@ -98,35 +101,36 @@ export class WorldScene extends Phaser.Scene {
     for (const hr of hs) for (const vr of vs) {
       add.rectangle(vr.x, hr.y, vr.w, hr.h, 0x3a3d42).setOrigin(0);
       const z = add.graphics(); z.fillStyle(0xffffff, 0.75);
-      for (let i = 6; i < 90; i += 14) {
-        z.fillRect(vr.x + i, hr.y - 12, 8, 10); z.fillRect(vr.x + i, hr.y + hr.h + 2, 8, 10);
-        z.fillRect(vr.x - 12, hr.y + i, 10, 8); z.fillRect(vr.x + vr.w + 2, hr.y + i, 10, 8);
-      }
+      for (let i = 6; i < vr.w - 8; i += 14) { z.fillRect(vr.x + i, hr.y - 12, 8, 10); z.fillRect(vr.x + i, hr.y + hr.h + 2, 8, 10); }
+      for (let i = 6; i < hr.h - 8; i += 14) { z.fillRect(vr.x - 12, hr.y + i, 10, 8); z.fillRect(vr.x + vr.w + 2, hr.y + i, 10, 8); }
     }
-    // park
-    add.rectangle(PARK.x, PARK.y, PARK.w, PARK.h, 0x52b788).setOrigin(0);
-    add.rectangle(PARK.x + PARK.w / 2 - 12, PARK.y, 24, PARK.h, 0xe9d8a6).setOrigin(0);
-    add.rectangle(PARK.x, PARK.y + PARK.h / 2 - 12, PARK.w, 24, 0xe9d8a6).setOrigin(0);
-    add.ellipse(PARK.x + 390, PARK.y + 110, 150, 90, 0x4ea8de);
-    add.circle(PARK.x + PARK.w / 2, PARK.y + PARK.h / 2, 34, 0xe9d8a6);
-    add.circle(PARK.x + PARK.w / 2, PARK.y + PARK.h / 2, 18, 0x90e0ef);
-    for (const [tx, ty] of [[40, 40], [120, 70], [60, 160], [180, 330], [80, 360], [400, 330], [470, 260], [330, 60], [200, 150], [470, 380], [40, 260], [320, 360]]) add.image(PARK.x + tx, PARK.y + ty, 'tree');
-    this.label(PARK.x + PARK.w / 2, PARK.y + 18, '🌳 Central Park', 14, '#fff');
+    // park (paths, pond, fountain and trees scale with its size)
+    if (park) {
+      const cx = park.x + park.w / 2, cy = park.y + park.h / 2;
+      add.rectangle(park.x, park.y, park.w, park.h, 0x52b788).setOrigin(0);
+      add.rectangle(cx - 12, park.y, 24, park.h, 0xe9d8a6).setOrigin(0);
+      add.rectangle(park.x, cy - 12, park.w, 24, 0xe9d8a6).setOrigin(0);
+      add.ellipse(park.x + park.w * 0.75, park.y + park.h * 0.26, park.w * 0.29, park.h * 0.21, 0x4ea8de);
+      add.circle(cx, cy, 34, 0xe9d8a6);
+      add.circle(cx, cy, 18, 0x90e0ef);
+      for (const [tx, ty] of [[.08, .1], [.23, .17], [.12, .38], [.35, .79], [.15, .86], [.77, .79], [.9, .62], [.63, .14], [.38, .36], [.9, .9], [.08, .62], [.62, .86]]) add.image(park.x + tx * park.w, park.y + ty * park.h, 'tree');
+      this.label(cx, park.y + 18, `🌳 ${park.name}`, 14, '#fff');
+    }
     // decor buildings
-    for (const d of DECOR) this.building(d, 0x95a5a6, 0x7f8c8d);
+    for (const d of decor) this.building(d, 0x95a5a6, 0x7f8c8d);
     // locations
-    for (const l of LOCATIONS) {
-      this.building(l, l.color, l.roof);
+    for (const l of this.places) {
+      this.building(l, hex(l.color), hex(l.roof));
       this.label(l.x + l.w / 2, l.y + l.h / 2 - 6, l.icon, 34);
       this.label(l.x + l.w / 2, l.y + l.h / 2 + 30, l.name, 13, '#fff', '#00000088');
       const door = add.rectangle(l.door.x, l.door.y, 26, 26, 0xffd32a, 0.35).setStrokeStyle(2, 0xffd32a);
       this.tweens.add({ targets: door, alpha: 0.4, yoyo: true, repeat: -1, duration: 900 });
     }
-    // airport details: runway + taxi stand
-    add.rectangle(30, 340, 240, 40, 0x2f3542).setOrigin(0);
-    const rg = add.graphics(); rg.lineStyle(3, 0xffffff, 0.8); for (let x = 40; x < 260; x += 30) rg.lineBetween(x, 360, x + 15, 360);
-    this.taxi = this.add.image(TAXI_STAND.x, TAXI_STAND.y, 'car').setTint(0xffd32a).setAngle(90).setDepth(5);
-    this.label(TAXI_STAND.x, TAXI_STAND.y - 34, '🚕 TAXI', 12, '#ffd32a');
+    // where the player's first ride waits
+    if (taxiStand) {
+      this.taxi = this.add.image(taxiStand.x, taxiStand.y, 'car').setTint(0xffd32a).setAngle(90).setDepth(5);
+      this.label(taxiStand.x, taxiStand.y - 34, '🚕 TAXI', 12, '#ffd32a');
+    }
   }
 
   building(b, color, roof) {
@@ -141,8 +145,9 @@ export class WorldScene extends Phaser.Scene {
   // ── NPC pedestrians ───────────────────────────────────────────
   spawnPedestrians() {
     const pts = [];
-    for (let i = 0; i < 30; i++) pts.push({ x: PARK.x + 30 + Math.random() * (PARK.w - 60), y: PARK.y + 30 + Math.random() * (PARK.h - 60) });
-    for (const r of ROADS) {
+    const { park, roads } = this.map;
+    if (park) for (let i = 0; i < 30; i++) pts.push({ x: park.x + 30 + Math.random() * (park.w - 60), y: park.y + 30 + Math.random() * (park.h - 60) });
+    for (const r of roads) {
       const horiz = r.w > r.h;
       for (let i = 0; i < 8; i++) {
         const along = 40 + Math.random() * ((horiz ? r.w : r.h) - 80);
@@ -151,9 +156,9 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     this.wayPoints = pts;
-    this.peds = PEDESTRIANS.map((p, i) => {
-      const start = i < 4 ? pts[i * 3] : pts[30 + i * 5];
-      const s = this.physics.add.image(start.x, start.y, 'person').setTint(p.color).setDepth(9);
+    this.peds = getPack().people.map((p, i) => {
+      const start = pts[(i * 7) % pts.length];
+      const s = this.physics.add.image(start.x, start.y, 'person').setTint(hex(p.color)).setDepth(9);
       s.body.setCircle(11, 3, 3);
       s.setCollideWorldBounds(true);
       this.physics.add.collider(s, this.walls);
@@ -195,11 +200,12 @@ export class WorldScene extends Phaser.Scene {
   spawnCars() {
     const colors = [0xe74c3c, 0x3498db, 0xecf0f1, 0x2c3e50, 0x16a085, 0xf39c12, 0x8e44ad, 0xffd32a];
     this.cars = [];
-    for (const r of ROADS) {
+    for (const r of this.map.roads) {
       const horiz = r.w > r.h;
       for (const dir of [1, -1]) {
         for (let k = 0; k < 2; k++) {
-          const lane = dir === 1 ? (horiz ? r.y + 70 : r.x + 26) : (horiz ? r.y + 26 : r.x + 70);
+          // drive on the right: one lane each way
+          const lane = dir === 1 ? (horiz ? r.y + r.h * 0.73 : r.x + r.w * 0.27) : (horiz ? r.y + r.h * 0.27 : r.x + r.w * 0.73);
           const along = Math.random() * (horiz ? r.w : r.h);
           const c = this.add.image(horiz ? r.x + along : lane, horiz ? lane : r.y + along, 'car').setTint(Phaser.Utils.Array.GetRandom(colors)).setDepth(8);
           c.angle = horiz ? (dir === 1 ? 0 : 180) : (dir === 1 ? 90 : -90);
@@ -250,12 +256,12 @@ export class WorldScene extends Phaser.Scene {
   // ── Cameras / minimap / night ─────────────────────────────────
   setupCameras() {
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, WORLD.width, WORLD.height);
+    cam.setBounds(0, 0, this.map.width, this.map.height);
     cam.startFollow(this.player, true, 0.12, 0.12);
     cam.setZoom(window.innerWidth > 1400 ? 1.15 : 1);
     this.night = this.add.rectangle(0, 0, 10, 10, 0x0a1640, 0).setOrigin(0).setScrollFactor(0).setDepth(50);
-    this.mini = this.cameras.add(0, 0, 200, 158).setZoom(200 / WORLD.width).setBackgroundColor(0x1e272e).setName('mini');
-    this.mini.centerOn(WORLD.width / 2, WORLD.height / 2);
+    this.mini = this.cameras.add(0, 0, 200, this.miniH).setZoom(200 / this.map.width).setBackgroundColor(0x1e272e).setName('mini');
+    this.mini.centerOn(this.map.width / 2, this.map.height / 2);
     this.miniDot = this.add.circle(0, 0, 42, 0xff3b3b).setStrokeStyle(10, 0xffffff).setDepth(60);
     this.miniTarget = this.add.circle(0, 0, 50, 0xffd32a).setDepth(60);
     cam.ignore([this.miniDot, this.miniTarget]);
@@ -264,7 +270,7 @@ export class WorldScene extends Phaser.Scene {
 
   layout() {
     const w = this.scale.width, hgt = this.scale.height;
-    this.mini.setPosition(w - 214, hgt - 172);
+    this.mini.setPosition(w - 214, hgt - this.miniH - 14);
     this.night.setSize(w / this.cameras.main.zoom + 200, hgt / this.cameras.main.zoom + 200).setPosition(-100, -100);
   }
 
@@ -366,10 +372,12 @@ export class WorldScene extends Phaser.Scene {
     if (blocking) { ui.prompt(null); this.nearest = null; return; }
     const p = this.player;
     let best = null, bestD = 56;
-    for (const l of LOCATIONS) {
-      for (const pt of l.id === 'airport' ? [l.door, TAXI_STAND] : [l.door]) {
+    // the taxi stand is a second "door" of the place where the player lands
+    const stand = this.map.taxiStand, arrival = arrivalPlace();
+    for (const l of this.places) {
+      for (const pt of stand && l.id === arrival ? [l.door, stand] : [l.door]) {
         const d = Math.hypot(pt.x - p.x, pt.y - p.y);
-        if (d < bestD + (pt === TAXI_STAND ? 20 : 0)) { bestD = d; best = { type: 'location', id: l.id, text: `${t('enter')} ${l.icon} ${l.name}` }; }
+        if (d < bestD + (pt === stand ? 20 : 0)) { bestD = d; best = { type: 'location', id: l.id, text: `${t('enter')} ${l.icon} ${l.name}` }; }
       }
     }
     for (const s of this.peds) {

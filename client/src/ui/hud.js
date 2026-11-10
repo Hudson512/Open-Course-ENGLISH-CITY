@@ -1,8 +1,8 @@
 // Heads-up display: stats, clock, tracked mission, prompts, toasts.
-import { h, $, clear, fmtMoney, fmtTime } from './dom.js';
+import { h, $, clear, fmtTime } from './dom.js';
+import { getPack, fmtMoney, packFlags } from '../pack.js';
 import { getState, levelFor, trackedMission, missionInfo, bus } from '../state.js';
 import { t } from '../i18n.js';
-import { locationById } from '../../../shared/world.js';
 import { online, others } from '../net.js';
 
 let root, statsEl, missionEl, promptEl, toastsEl, netEl;
@@ -43,6 +43,8 @@ function bar(label, value, cls) {
     h('span', { class: 'stat-val' }, Math.round(value)));
 }
 
+const FLAG_ICONS = { phone: '📱', bank: '🏦' };
+
 function render() {
   const s = getState();
   if (!s || !statsEl) return;
@@ -62,9 +64,9 @@ function render() {
     bar('⚡', s.stats.energy, 'energy'),
     bar('💬', s.stats.social, 'social'),
     h('div', { class: 'docs' },
-      doc('🏠', s.home ? (s.home === 'hotel' ? 'Hotel' : 'Apt') : '—', !!s.home),
-      doc('📱', s.flags.phone ? 'SIM' : '—', s.flags.phone),
-      doc('🏦', s.flags.bank ? 'Bank' : '—', s.flags.bank),
+      doc('🏠', s.home ? (getPack().places[s.home]?.short || '✓') : '—', !!s.home),
+      // the "documents" this city can give: phone, bank account…
+      ...packFlags().map(f => doc(FLAG_ICONS[f] || '📄', s.flags[f] ? f[0].toUpperCase() + f.slice(1) : '—', !!s.flags[f])),
       doc('💼', s.job ? s.job.title : '—', !!s.job))
   );
 
@@ -72,7 +74,7 @@ function render() {
   clear(missionEl);
   if (m) {
     const info = missionInfo(m);
-    const loc = info.location && locationById(info.location);
+    const loc = info.place;
     missionEl.append(
       h('div', { class: 'mission-kind' }, m.kind === 'story' ? `⭐ ${t('story')}` : m.kind === 'job' ? '💼' : `📅 ${t('daily')}`, h('span', { class: 'mission-more' }, 'M ▸')),
       h('div', { class: 'mission-title' }, info.title),

@@ -3,21 +3,16 @@ import { h, $, clear, esc } from './dom.js';
 import * as S from '../state.js';
 import { api, getSettings } from '../api.js';
 import { speak, stopSpeaking, listen, micSupported } from '../speech.js';
-import { t, tr } from '../i18n.js';
-import { NPCS } from '../../../shared/npcs.js';
-import { TEMPLATES, resolve, missionLocation } from '../../../shared/missions.js';
+import { t } from '../i18n.js';
+import { getPack, fmtMoney } from '../pack.js';
 
 let current = null;
 export const dialogOpen = () => !!current;
 
+// Who the player is talking to: the place's character, or the pedestrian they stopped.
 export function npcMeta(mission) {
-  if (mission.templateId === 'smalltalk') {
-    const p = mission.params;
-    return { name: p.name, emoji: p.emoji || '🙂', role: p.role || 'Local', voice: { gender: p.gender || 'female', rate: 1 } };
-  }
-  const id = resolve(TEMPLATES[mission.templateId], 'npc', mission.params);
-  const n = NPCS[id] || {};
-  return { name: n.name || 'Staff', emoji: n.emoji || '🙂', role: n.role || '', voice: n.voice || {} };
+  const c = S.missionInfo(mission).character || {};
+  return { name: c.name || 'Staff', emoji: c.emoji || '🙂', role: c.role || 'Local', voice: c.voice || {} };
 }
 
 export function openDialog(mission, { onClose } = {}) {
@@ -96,7 +91,7 @@ export function openDialog(mission, { onClose } = {}) {
         S.addXP(Math.round(res.feedback.score / 10));
         S.addWords(res.feedback.newWords, meta.name);
       }
-      clear(sugg).append((res.suggestions || []).map(s => h('button', { class: 'chip', onclick: () => { input.value = s; input.focus(); } }, s)));
+      clear(sugg).append(...(res.suggestions || []).map(s => h('button', { class: 'chip', onclick: () => { input.value = s; input.focus(); } }, s)));
       if (lowLevel && res.suggestions?.length && current.playerTurns === 0) sugg.classList.remove('hidden');
 
       if (res.actions?.length) handleActions(res.actions);
@@ -113,14 +108,20 @@ export function openDialog(mission, { onClose } = {}) {
     }
   }
 
+  // A fare, a choice, a rent, an account or a job is settled once per conversation: if the
+  // character repeats the action after a "thank you", the player must not pay twice.
+  const ONCE = ['price', 'choose', 'rent', 'grant', 'hire'];
+
   function handleActions(actions) {
+    const kinds = getPack().actions;
+    actions = actions.filter(a => !(ONCE.includes(kinds[a.type]?.kind) && current.done.some(d => d.type === a.type)));
     const results = S.applyActions(current.mission, actions);
     let needsReaction = false;
     for (const r of results) {
-      if (r.action.type === 'end') { current.ended = true; addGame('👋'); continue; }
+      if (r.kind === 'end') { current.ended = true; addGame('👋'); continue; }
       if (r.ok) {
-        current.done.push(r.action);
-        const label = r.cost ? `💳 −$${r.cost.toFixed(2)} · ${r.action.item ? `${r.action.qty}× ${r.action.item}` : r.action.type.replace('_', ' ')}` : `✔️ ${r.action.type.replace('_', ' ')}`;
+        current.done.push({ ...r.action, kind: r.kind });
+        const label = r.cost ? `💳 −${fmtMoney(r.cost)} · ${r.action.item ? `${r.action.qty}× ${r.action.item}` : r.action.type.replace('_', ' ')}` : `✔️ ${r.action.type.replace('_', ' ')}`;
         addGame(label, 'ok');
       } else {
         addGame(r.payFail ? `💳 ${t('payFail')}` : `⛔ ${r.note}`, 'bad');
@@ -132,16 +133,17 @@ export function openDialog(mission, { onClose } = {}) {
   }
 
   function checkCompletion() {
-    const loc = missionLocation(current.mission);
-    const candidates = [current.mission, ...S.activeMissions().filter(m => m.uid !== current.mission.uid && loc && missionLocation(m) === loc)];
+    const loc = S.missionPlace(current.mission);
+    const candidates = [current.mission, ...S.activeMissions().filter(m => m.uid !== current.mission.uid && loc && S.missionPlace(m) === loc)];
     for (const m of candidates) {
       if (current.completed.has(m.uid) || m.kind === 'free') continue;
       if (S.isComplete(m, current.done, { turns: current.playerTurns })) {
         current.completed.add(m.uid);
+        const title = S.missionInfo(m).title;
         const reward = S.completeMission(m);
-        if (m.templateId === 'smalltalk') onSmalltalkDone(m);
+        if (getPack().missions[m.templateId].with_person) onSmalltalkDone(m);
         banner.classList.remove('hidden');
-        clear(banner).append(h('b', {}, `🏆 ${t('missionComplete')}`), ` ${tr(resolve(TEMPLATES[m.templateId], 'title', m.params, S.getState()))} · +${reward.xp} XP`);
+        clear(banner).append(h('b', {}, `🏆 ${t('missionComplete')}`), ` ${title} · +${reward.xp} XP`);
       }
     }
   }

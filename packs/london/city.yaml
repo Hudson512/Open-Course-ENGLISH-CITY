@@ -1,0 +1,47 @@
+# London — the second city of English City: British English, pounds and a different street map.
+# Format: docs/city-pack-spec.md. The places and people are made up.
+pack: 1
+id: london
+version: 1.0.0
+name: London
+country: United Kingdom
+flag: 🇬🇧
+language: en-GB
+currency: { symbol: "£", code: GBP }
+
+start:
+  money: 500
+  mission: arrival_cab
+
+story: [arrival_cab, move_in, get_sim, get_oyster, bank_account, job_interview]
+
+daily:
+  count: 3
+  pool:
+    - { mission: shop, with: { place: bakery,      items: { pick: 2, qty: [1, 2] } } }
+    - { mission: shop, with: { place: supermarket, items: { pick: 3, qty: [1, 2], where: food } } }
+    - { mission: shop, with: { place: cafe,        items: { pick: 2 } } }
+    - { mission: shop, with: { place: pub,         items: { pick: 1, where: "food > 30", plus: [lemonade] } } }
+    - mission: barber_cut
+      with:
+        style:
+          one_of:
+            - short back and sides
+            - just a tidy-up, keep the length
+            - grade 2 all over
+            - haircut and beard trim
+            - wet shave
+    - { mission: chat_people, with: { count: 2 } }
+    - { mission: online_chat }
+
+jobs:
+  software_developer: { workplace: offices,     wage: 180, title: Junior Software Developer }
+  nurse:              { workplace: surgery,     wage: 150, title: Healthcare Assistant }
+  teacher:            { workplace: offices,     wage: 140, title: Teaching Assistant }
+  accountant:         { workplace: bank,        wage: 165, title: Accounts Assistant }
+  chef:               { workplace: pub,         wage: 120, title: Commis Chef }
+  sales:              { workplace: supermarket, wage: 110, title: Shop Assistant }
+  engineer:           { workplace: offices,     wage: 185, title: Graduate Engineer }
+  designer:           { workplace: offices,     wage: 155, title: Junior Designer }
+  barber:             { workplace: barber,      wage: 105, title: Barber }
+  other:              { workplace: offices,     wage: 115, title: Office Administrator }

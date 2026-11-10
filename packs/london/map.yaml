@@ -1,0 +1,30 @@
+# London street map. Positions are in cells (1 cell = 20 px), [column, row] from the top-left corner.
+# Places you can enter are in places.yaml; this file only has what is around them.
+cell: 20
+size: [110, 90]
+
+roads:                       # each road crosses the whole map
+  - { row: 12, width: 5 }
+  - { row: 44, width: 5 }
+  - { row: 72, width: 5 }
+  - { col: 18, width: 5 }
+  - { col: 55, width: 5 }
+  - { col: 88, width: 5 }
+
+park: { name: Kingsway Green, at: [24, 50], size: [29, 21] }
+
+decor:                       # buildings you cannot enter
+  - { at: [2, 2], size: [14, 9] }
+  - { at: [61, 2], size: [25, 9] }
+  - { at: [94, 2], size: [14, 9] }
+  - { at: [2, 50], size: [14, 20] }
+  - { at: [75, 50], size: [11, 9] }
+  - { at: [61, 62], size: [25, 9] }
+  - { at: [94, 50], size: [14, 20] }
+  - { at: [2, 78], size: [14, 10] }
+  - { at: [24, 78], size: [29, 10] }
+  - { at: [61, 78], size: [25, 10] }
+  - { at: [94, 78], size: [14, 10] }
+
+spawn: [19.5, 32]
+taxi_stand: [20.25, 27]

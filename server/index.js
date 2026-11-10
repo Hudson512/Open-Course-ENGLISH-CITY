@@ -8,7 +8,8 @@ import { resolveSettings, chat, parseModelJSON, normalizeTurn, PRESETS } from '.
 import { buildSystemPrompt, buildMessages, buildCheckPrompt } from './prompts.js';
 import { mockTurn } from './mock.js';
 import { attachMultiplayer } from './multiplayer.js';
-import { TEMPLATES, resolve } from '../shared/missions.js';
+import { viewMission } from '../shared/engine.js';
+import { loadPacks, packSummary } from './packs.js';
 import { postgresStore, validId, validToken } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -16,7 +17,8 @@ const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // `store` (see db.js) enables server-side saves; without it the game is localStorage-only.
-export function createApp({ store = null } = {}) {
+// `packs` are the compiled cities (see packs.js), by id.
+export function createApp({ store = null, packs = loadPacks() } = {}) {
   const app = express();
   app.use(express.json({ limit: '200kb' }));
 
@@ -33,23 +35,33 @@ export function createApp({ store = null } = {}) {
     });
   });
 
+  // Cities: the list for the departures board, and one whole city for the game to draw and play.
+  app.get('/api/packs', (req, res) => res.json(Object.values(packs).map(packSummary)));
+  app.get('/api/packs/:id', (req, res) => {
+    const pack = Object.hasOwn(packs, req.params.id) ? packs[req.params.id] : null;
+    if (!pack) return res.status(404).json({ error: 'city not found' });
+    res.json(pack);
+  });
+
   // One NPC turn: reply + game actions + language feedback
   app.post('/api/npc/turn', async (req, res) => {
     try {
-      const { mission, state, history, settings: clientSettings } = req.body || {};
-      if (!mission || !TEMPLATES[mission.templateId]) return res.status(400).json({ error: 'invalid mission' });
+      const { pack: packId, mission, state, history, settings: clientSettings } = req.body || {};
+      const pack = Object.hasOwn(packs, String(packId)) ? packs[packId] : null;
+      if (!pack) return res.status(400).json({ error: 'invalid city' });
+      const view = mission && Object.hasOwn(pack.missions, String(mission.templateId)) ? viewMission(pack, mission, state || {}) : null;
+      if (!view) return res.status(400).json({ error: 'invalid mission' });
       const settings = resolveSettings(clientSettings);
       let turn;
       if (settings.kind === 'mock') {
-        turn = mockTurn({ mission, state, history });
+        turn = mockTurn({ pack, mission, state, history });
       } else {
-        const system = buildSystemPrompt({ mission, state });
+        const system = buildSystemPrompt({ pack, mission, state });
         const messages = buildMessages(history);
         const text = await chat({ system, messages, settings });
         turn = normalizeTurn(parseModelJSON(text), text);
       }
-      const allowed = resolve(TEMPLATES[mission.templateId], 'actions', mission.params) || [];
-      turn.actions = (turn.actions || []).filter(a => allowed.includes(a.type));
+      turn.actions = (turn.actions || []).filter(a => view.allow.includes(a.type));
       turn.provider = settings.provider;
       res.json(turn);
     } catch (e) {
@@ -129,12 +141,14 @@ export function createApp({ store = null } = {}) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const store = process.env.DATABASE_URL ? await postgresStore(process.env.DATABASE_URL) : null;
-  const server = http.createServer(createApp({ store }));
+  const packs = loadPacks();
+  const server = http.createServer(createApp({ store, packs }));
   attachMultiplayer(server);
   server.listen(PORT, HOST, () => {
     const provider = process.env.LLM_PROVIDER || 'mock';
     console.log(`\n🗽  OpenCourse English City running → http://localhost:${PORT}`);
     console.log(`    LLM provider (server default): ${provider}${provider === 'mock' ? ' (offline — add a key in .env or in the game Settings)' : ''}`);
+    console.log(`    Cities: ${Object.values(packs).map(p => p.name).join(', ') || 'none (check packs/)'}`);
     console.log(`    Saves: ${store ? 'Postgres (server-side)' : 'browser only (set DATABASE_URL to persist on the server)'}`);
     console.log(`    Friends on your network can join at http://<your-ip>:${PORT}\n`);
   });

@@ -1,0 +1,257 @@
+# Missions of London.
+#   at        where it happens (a place id). The player talks to the character who works there.
+#   title     shown in the mission list, in each interface language
+#   goal      what the player is told to do
+#   brief     instructions for the AI playing the character (never shown to the player)
+#   allow     actions the character may use (actions.yaml)
+#   complete  when the mission counts as done
+#   requires  what the player needs before the mission is available
+# {{…}} inserts a value from the pack or from the player's situation.
+# All characters speak British English (spelling, words and expressions).
+
+# ── Story ─────────────────────────────────────────────────────────
+
+arrival_cab:
+  kind: story
+  at: airport
+  title: { en: Take a black cab from the airport, pt: Apanha um táxi preto no aeroporto }
+  goal:
+    en: >
+      Talk to the cab driver, choose {{place.hostel.name}} ({{money place.hostel.lodging.price}}/night)
+      or {{place.flat.name}} ({{money place.flat.lodging.price}}/week), and agree the fare.
+    pt: >
+      Fala com o taxista, escolhe o {{place.hostel.name}} ({{money place.hostel.lodging.price}}/noite)
+      ou o {{place.flat.name}} ({{money place.flat.lodging.price}}/semana) e combina o preço da corrida.
+  brief: >
+    The passenger has just landed in {{city.name}} with suitcases and needs a ride to either
+    {{place.hostel.name}} (a bed in a shared dorm, {{money place.hostel.lodging.price}} a night,
+    easy to book) or {{place.flat.name}} (a room in a shared flat,
+    {{money place.flat.lodging.price}} a week, better for a long stay but the landlady asks
+    questions). First ask "Where to?". You offer a fixed fare instead of the meter: your opening
+    price is {{money action.agree_price.start}}, your secret minimum is
+    {{money action.agree_price.min}}. Haggle realistically: come down in small steps only when the
+    passenger negotiates politely in English (a counter-offer, a reason, mentions the Tube or a
+    minicab). Mention putting the bags in the boot. When both the destination and the fare are
+    agreed, emit set_destination and agree_price and say something like "Hop in, then!".
+  allow: [agree_price, set_destination, end]
+  vocabulary: [fare, "How much to…?", "That's a bit steep", "Could you do it for…?", deal, suitcase, boot, city centre, receipt]
+  complete: { all: [{ did: agree_price }, { did: set_destination }] }
+  reward: { xp: 80, social: 5 }
+
+move_in:
+  kind: story
+  at: "{{choice.first_home}}"          # hostel or flat, decided in the cab
+  variants:
+    hostel:
+      title: { en: "Check in at {{place.name}}", pt: "Faz o check-in no {{place.name}}" }
+      goal:
+        en: "Check in: say your name, how many nights, and pay."
+        pt: "Check-in: diz o teu nome, quantas noites vais ficar e paga."
+      brief: >
+        A new guest arrives at reception. A bed in an 8-bed dorm is
+        {{money place.lodging.price}} per night (you can go down to {{money place.lodging.min}}
+        for 5 nights or more). Ask for their name, number of nights, ID (a passport is fine) and
+        confirm payment by card. Mention check-out (10 am), the locker (bring a padlock) and the
+        shared kitchen. Then emit rent.
+    flat:
+      title: { en: Rent a room on Albion Road, pt: Aluga um quarto na Albion Road }
+      goal:
+        en: "Convince the landlady to rent you a room: talk about yourself, your plans and the rent."
+        pt: "Convence a senhoria a alugar-te um quarto: fala de ti, dos teus planos e da renda."
+      brief: >
+        A newcomer wants to rent a furnished room in your shared flat. Rent is
+        {{money place.lodging.price}} per week, bills included, paid weekly in advance. You can go
+        down to {{money place.lodging.min}} if they make a good impression (why they came, their
+        profession, that they are tidy and quiet). Ask questions before agreeing, explain the
+        house rules, then emit rent.
+  allow: [rent, end]
+  vocabulary: [check in, check out, booking, per night, deposit, tenancy, rent, bills included, flatmate, landlady]
+  complete: { did: rent }
+  reward: { xp: 70, social: 5 }
+
+get_sim:
+  kind: story
+  at: phone_shop
+  title: { en: Get a UK mobile number, pt: Arranja um número de telemóvel britânico }
+  goal:
+    en: Buy a pay-as-you-go SIM or a monthly contract at {{place.name}}.
+    pt: Compra um SIM pré-pago (pay-as-you-go) ou um contrato mensal na {{place.name}}.
+  brief: >
+    The customer needs a UK mobile number. Ask if their phone is unlocked, explain the
+    pay-as-you-go SIM (you top it up when you need to) vs the monthly contract (unlimited calls
+    and texts, 20 GB of data). Try to sell a screen protector once. {{price_list}}
+  allow: [sell, end]
+  complete: { flag: phone }            # set by buying the SIM or the contract (places.yaml)
+  reward: { xp: 60, social: 3 }
+
+get_oyster:
+  kind: story
+  at: tube
+  title: { en: Get an Oyster card, pt: Arranja um cartão Oyster }
+  goal:
+    en: Ask how the Underground works and buy an Oyster card at {{place.name}}.
+    pt: Pergunta como funciona o metro e compra um cartão Oyster na {{place.name}}.
+  brief: >
+    A newcomer at the ticket hall does not know how to pay for the Tube and buses. Explain the
+    Oyster card in simple words (a card you top up; touch in and touch out on the yellow reader;
+    cheaper off-peak), ask which zones they will travel in and sell them one when they ask for
+    it. {{price_list}}
+  allow: [sell, end]
+  complete: { flag: oyster }           # set by buying the Oyster card (places.yaml)
+  reward: { xp: 60, social: 3 }
+
+bank_account:
+  kind: story
+  at: bank
+  title: { en: Open a bank account, pt: Abre uma conta bancária }
+  goal:
+    en: Open a current account. You need an address and a UK mobile number.
+    pt: Abre uma conta à ordem. Precisas de morada e de um número de telemóvel britânico.
+  brief:
+    - "The customer wants to open a current account. Requirements: passport (they have it),"
+    - when: { has: home }
+      text: "proof of a UK address (they live at {{home.name}}),"
+      else: "proof of a UK address (they DO NOT have one yet),"
+    - when: { flag: phone }
+      text: "and a UK mobile number (they have one)."
+      else: "and a UK mobile number (they DO NOT have one yet)."
+    - >
+      If a requirement is missing, politely explain what they need and do not open the account.
+      Otherwise ask for details (full name, date of birth, occupation), explain the debit card,
+      contactless payments and that there is no monthly fee, then emit open_account.
+  allow: [open_account, end]
+  vocabulary: [current account, savings account, debit card, PIN, pay in, withdraw, sort code, contactless, proof of address]
+  complete: { did: open_account }
+  reward: { xp: 70, social: 3 }
+
+job_interview:
+  kind: story
+  at: job_centre
+  title: { en: Job interview, pt: Entrevista de emprego }
+  goal:
+    en: Pass a job interview in your field. Requires level A2, an address, a mobile number and a bank account.
+    pt: Passa numa entrevista de emprego na tua área. Requer nível A2, morada, telemóvel e conta bancária.
+  requires:
+    all: [{ level: A2 }, { has: home }, { flag: phone }, { flag: bank }, { not: { has: job } }]
+  retry: next_day                      # after a rejection
+  brief: >
+    Interview the candidate for a "{{player.job_offer.title}}" role (field:
+    {{player.profession.label}}). Ask ONE question per turn: tell me a bit about yourself,
+    experience, why this role, strengths/weaknesses, 1-2 practical questions about the field,
+    when they could start. After 5-7 questions, decide. Judge communication in English AND
+    content. Emit hire (score >= 60) or reject (score < 60) with honest feedback.
+  allow: [hire, reject, end]
+  vocabulary: [CV, experience, strengths, weakness, teamwork, deadline, full-time, salary, notice period, "I'm a quick learner"]
+  complete: { did: hire }
+  reward: { xp: 150, social: 10 }
+
+# ── Job ───────────────────────────────────────────────────────────
+
+work_shift:
+  kind: job
+  at: "{{player.job.workplace}}"
+  character: offices                   # James, the manager, is who you talk to wherever you work
+  once_per: day
+  requires: { has: job }
+  title: { en: Work shift, pt: Turno de trabalho }
+  goal:
+    en: Handle today's situation at work in English to get paid.
+    pt: Resolve a situação de hoje no trabalho, em inglês, para receberes o salário.
+  brief: >
+    The employee works as "{{player.job.title}}" ({{player.profession.name}}). Today's situation:
+    {{rotate situations}}. Play it out realistically in 4-6 turns (you may play the client or
+    colleague when needed). Then emit work_done with performance.
+  lists:
+    situations:
+      - "a Monday team catch-up: ask how their weekend was, what they finished last week and plan today"
+      - a customer complaint the employee must handle politely (the customer is annoyed but very polite)
+      - explaining a task step by step to a new colleague
+      - negotiating a deadline that is too tight ("by close of play tomorrow")
+      - writing (saying) a short professional email to a client
+      - asking the manager for a day of annual leave during a busy week
+  allow: [work_done, end]
+  vocabulary: [deadline, catch-up, rota, annual leave, "I'll sort it out", "Could you possibly…?", "Leave it with me", chase up, colleague]
+  complete: { did: work_done }
+  reward: { xp: 90, social: 8 }
+
+# ── Daily (picked from the pool in city.yaml, which fills in `with`) ──
+
+shop:
+  kind: daily
+  at: "{{with.place}}"
+  title: { en: "Shopping: {{list with.items}}", pt: "Compras: {{list with.items}}" }
+  goal:
+    en: Buy {{list with.items}} at {{place.name}}.
+    pt: Compra {{list with.items}} em {{place.name}}.
+  brief: >
+    The customer needs to buy: {{list with.items}} (but they must ask for it themselves — do not
+    list it for them). Serve them naturally, ask the usual follow-up questions for this kind of
+    place, tell the total, and take payment. {{price_list}}
+  allow: [sell, service, end]
+  complete: { bought: with.items }
+  reward: { xp: 50, social: 4 }
+
+barber_cut:
+  kind: daily
+  at: barber
+  title: { en: "Get a haircut: {{with.style}}", pt: "Corta o cabelo: {{with.style}}" }
+  goal:
+    en: 'Explain to the barber exactly what you want: "{{with.style}}". Then pay.'
+    pt: 'Explica ao barbeiro exatamente o que queres: "{{with.style}}". Depois paga.'
+  brief: >
+    The customer wants a haircut. They should describe it themselves (their target is
+    "{{with.style}}", don't reveal it). Ask precise questions (clipper grade, how short on the
+    sides, the top, the fringe, beard, square or tapered at the back). Describe what you are doing
+    with small talk. At the end emit service. {{price_list}}
+  allow: [service, end]
+  complete: { did: service }
+  reward: { xp: 60, social: 15 }
+
+chat_people:
+  kind: daily
+  at: park
+  title: { en: "Talk to {{with.count}} people in the street", pt: "Fala com {{with.count}} pessoas na rua" }
+  goal:
+    en: Walk up to {{with.count}} passers-by (E) and have a short chat.
+    pt: Aproxima-te de {{with.count}} pessoas (tecla E) e conversa um pouco.
+  complete: { count: smalltalk, at_least: with.count }
+  reward: { xp: 40, social: 10 }
+
+online_chat:
+  kind: daily
+  title: { en: Talk to a real player, pt: Fala com um jogador real }
+  goal:
+    en: Send 3 messages in English to another online player near you (Enter to chat).
+    pt: Envia 3 mensagens em inglês a outro jogador online perto de ti (Enter para conversar).
+  complete: { count: online_messages, at_least: 3 }
+  reward: { xp: 60, social: 20 }
+
+# ── Always available ──────────────────────────────────────────────
+
+smalltalk:                             # starts when the player stops a passer-by (people.yaml)
+  kind: social
+  with_person: true
+  title: { en: "Chat with {{person.name}}", pt: "Conversa com {{person.name}}" }
+  goal:
+    en: Have a friendly conversation (at least 4 messages).
+    pt: Tem uma conversa amigável (pelo menos 4 mensagens).
+  brief: >
+    You are a stranger in the street/park in London. {{person.persona}} The player approaches
+    you. Make friendly small talk the British way: the weather, the trains, the neighbourhood,
+    where they are from, recommendations. Ask questions back. Be a real person, with opinions.
+  allow: [end]
+  vocabulary: ["You alright?", Lovely to meet you, "Where are you from?", "What do you do?", "Cheers, take care!", "Fancy a cuppa?"]
+  complete: { turns: 4 }
+  reward: { xp: 30, social: 12 }
+
+visit:                                 # walking into a place with no mission there
+  kind: free
+  at: any
+  title: { en: "Visit {{place.name}}", pt: "Visitar {{place.name}}" }
+  goal:
+    en: Talk and buy what you need at {{place.name}}.
+    pt: Conversa e compra o que precisares em {{place.name}}.
+  brief: >
+    A customer walks in. Serve them naturally, ask the usual follow-up questions for this kind of
+    place, tell the total, and take payment. {{price_list}}
+  allow: [sell, service, end]

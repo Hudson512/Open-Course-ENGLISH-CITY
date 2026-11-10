@@ -9,14 +9,15 @@ const screen = () => $('#screen');
 function show(...children) { const s = screen(); clear(s).append(...children); s.classList.remove('hidden'); }
 export function hideScreen() { const s = screen(); s.classList.add('hidden'); clear(s); }
 
-export function titleScreen({ canContinue, onNew, onContinue, onSettings }) {
+export function titleScreen({ canContinue, onNew, onContinue, onSettings, notice }) {
   show(h('div', { class: 'title-screen' },
     h('div', { class: 'skyline' }),
     h('div', { class: 'logo' }, h('span', { class: 'logo-small' }, 'OpenCourse'), h('span', { class: 'logo-big' }, 'ENGLISH CITY'), h('span', { class: 'logo-sub' }, t('tagline'))),
     h('div', { class: 'title-buttons' },
       canContinue ? h('button', { class: 'primary big', onclick: onContinue }, `▶ ${t('continue')}`) : null,
       h('button', { class: canContinue ? 'ghost big' : 'primary big', onclick: onNew }, `✈️ ${t('newGame')}`),
-      h('button', { class: 'ghost', onclick: onSettings }, `⚙️ ${t('settings')}`)),
+      h('button', { class: 'ghost', onclick: onSettings }, `⚙️ ${t('settings')}`),
+      notice ? h('div', { class: 'error' }, notice) : null),
     h('div', { class: 'title-foot' }, 'Open source · MIT · Bring your own API key · ', h('a', { href: 'https://github.com', target: '_blank' }, 'GitHub'))));
 }
 
@@ -50,8 +51,11 @@ export function createScreen({ onDone, onBack }) {
   name.focus();
 }
 
-export function departuresScreen(player, { onBoard }) {
-  const rows = DESTINATIONS.map((d, i) => h('tr', { class: d.enabled ? 'on' : 'off', onclick: () => d.enabled && board(d) },
+// `packs` are the cities the server has (open flights); the rest of the board is "coming soon".
+export function departuresScreen(player, { packs = [], onBoard }) {
+  const langName = code => { try { return new Intl.DisplayNames([getLang()], { type: 'language' }).of(code); } catch { return code; } };
+  const open = packs.map(p => ({ id: p.id, flag: p.flag, city: p.name, name: p.country, language: langName(p.language), enabled: true }));
+  const rows = [...open, ...DESTINATIONS].map((d, i) => h('tr', { class: d.enabled ? 'on' : 'off', onclick: () => d.enabled && board(d) },
     h('td', {}, `OC${(101 + i * 37)}`),
     h('td', {}, `${d.flag} ${d.city}, ${d.name}`),
     h('td', {}, d.language),
@@ -65,7 +69,7 @@ export function departuresScreen(player, { onBoard }) {
     show(h('div', { class: 'flight' },
       h('div', { class: 'flight-text' }, `${t('flying')} ${d.city}, ${d.name} ${d.flag}`),
       h('div', { class: 'flight-path' }, h('span', { class: 'from' }, player.homeCity), h('div', { class: 'plane' }, '✈️'), h('span', { class: 'to' }, d.city)),
-      h('div', { class: 'flight-sub' }, t('landing'))));
+      h('div', { class: 'flight-sub' }, `${t('landing')} ${d.city}…`)));
     setTimeout(() => onBoard(d), 3600);
   }
 }

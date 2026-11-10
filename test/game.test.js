@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import { parseModelJSON, normalizeTurn, resolveSettings } from '../server/llm.js';
 import { buildMessages, buildSystemPrompt } from '../server/prompts.js';
 import { mockTurn } from '../server/mock.js';
-import { validateAction, generateDaily, TEMPLATES, jobRequirements } from '../shared/missions.js';
-import { findCatalogItem, levelFor } from '../shared/data.js';
+import { validateAction, generateDaily, blocked, findItem } from '../shared/engine.js';
+import { levelFor } from '../shared/data.js';
 import { createApp } from '../server/index.js';
 import { memoryStore } from '../server/db.js';
+import { compilePack } from '../tools/pack/compile.js';
+
+// The rules are tested on the city that ships with the game.
+const pack = compilePack(new URL('../packs/maple-city', import.meta.url).pathname);
+const packs = { [pack.id]: pack };
 
 const baseState = { xp: 0, money: 100, home: null, flags: { phone: false, bank: false }, job: null, time: { day: 1, minutes: 600 }, player: { name: 'Ana', profession: 'nurse', nativeLang: 'pt' } };
 
@@ -32,7 +37,7 @@ test('messages alternate and start with user', () => {
 });
 
 test('system prompt contains allowed actions only', () => {
-  const p = buildSystemPrompt({ mission: { templateId: 'shop', params: { place: 'bakery' } }, state: baseState });
+  const p = buildSystemPrompt({ pack, mission: { templateId: 'visit', params: { place: 'bakery' } }, state: baseState });
   assert.match(p, /"type":"sell"/);
   assert.doesNotMatch(p, /"type":"hire"/);
   assert.match(p, /croissant \$3\.50/);
@@ -40,37 +45,56 @@ test('system prompt contains allowed actions only', () => {
 
 test('taxi fare is clamped to allowed range', () => {
   const m = { templateId: 'arrival_taxi', params: {} };
-  assert.equal(validateAction(m, { type: 'agree_price', amount: 5 }, baseState).action.amount, 35);
-  assert.equal(validateAction(m, { type: 'agree_price', amount: 500 }, baseState).action.amount, 100);
-  assert.equal(validateAction(m, { type: 'sell', item: 'bagel' }, baseState).ok, false);
+  assert.equal(validateAction(pack, m, { type: 'agree_price', amount: 5 }, baseState).action.amount, 35);
+  assert.equal(validateAction(pack, m, { type: 'agree_price', amount: 500 }, baseState).action.amount, 100);
+  assert.equal(validateAction(pack, m, { type: 'sell', item: 'bagel' }, baseState).ok, false);
 });
 
 test('sell uses catalog price when LLM invents a price', () => {
-  const m = { templateId: 'shop', params: { place: 'bakery' } };
-  const v = validateAction(m, { type: 'sell', item: 'croissants', qty: 2, unitPrice: 0.01 }, baseState);
+  const m = { templateId: 'visit', params: { place: 'bakery' } };
+  const v = validateAction(pack, m, { type: 'sell', item: 'croissants', qty: 2, unitPrice: 0.01 }, baseState);
   assert.equal(v.action.item, 'croissant');
   assert.equal(v.cost, 7);
-  assert.equal(validateAction(m, { type: 'sell', item: 'laptop', qty: 1 }, baseState).ok, false);
+  assert.equal(validateAction(pack, m, { type: 'sell', item: 'laptop', qty: 1 }, baseState).ok, false);
 });
 
 test('bank and job require progression', () => {
-  assert.equal(validateAction({ templateId: 'open_bank', params: {} }, { type: 'open_account' }, baseState).ok, false);
-  assert.ok(jobRequirements(baseState).includes('level_a2'));
+  assert.equal(validateAction(pack, { templateId: 'open_bank', params: {} }, { type: 'open_account' }, baseState).ok, false);
+  assert.deepEqual(blocked(pack, 'job_interview', baseState), ['level_a2', 'home', 'phone', 'bank']);
   const ready = { ...baseState, xp: 400, home: 'hotel', flags: { phone: true, bank: true } };
-  assert.equal(jobRequirements(ready), null);
-  const v = validateAction({ templateId: 'job_interview', params: {} }, { type: 'hire', score: 40 }, ready);
+  assert.equal(blocked(pack, 'job_interview', ready), null);
+  const v = validateAction(pack, { templateId: 'job_interview', params: {} }, { type: 'hire', score: 40 }, ready);
   assert.equal(v.action.type, 'reject');
 });
 
+test('a mission can be limited to once a day, or to one try a day', () => {
+  const worker = { ...baseState, job: { workplace: 'clinic', wage: 150 }, time: { day: 4 } };
+  assert.equal(blocked(pack, 'work_shift', worker), null);
+  assert.deepEqual(blocked(pack, 'work_shift', { ...worker, log: { done: { work_shift: 4 } } }), ['done_today']);
+  assert.equal(blocked(pack, 'work_shift', { ...worker, log: { done: { work_shift: 3 } } }), null);
+  assert.deepEqual(blocked(pack, 'work_shift', baseState), ['job']);
+  const ready = { ...baseState, xp: 400, home: 'hotel', flags: { phone: true, bank: true }, log: { tried: { job_interview: 1 } } };
+  assert.deepEqual(blocked(pack, 'job_interview', ready), ['tomorrow']);
+});
+
+test('what is bought changes the player only through the pack', () => {
+  const sim = Object.keys(pack.places.phone_store.sells).find(k => pack.places.phone_store.sells[k].effects);
+  const v = validateAction(pack, { templateId: 'get_phone', params: {} }, { type: 'sell', item: sim, qty: 1 }, baseState);
+  assert.equal(v.ok, true);
+  assert.deepEqual(v.effects, [{ set_flag: 'phone' }]);
+  const cut = validateAction(pack, { templateId: 'visit', params: { place: 'barber' } }, { type: 'service', item: Object.keys(pack.places.barber.services)[0] }, baseState);
+  assert.deepEqual(cut.effects, [{ stat: { social: 12 } }]);
+});
+
 test('daily missions are deterministic and valid', () => {
-  const a = generateDaily(3, 42), b = generateDaily(3, 42);
+  const a = generateDaily(pack, 3, 42), b = generateDaily(pack, 3, 42);
   assert.deepEqual(a, b);
   assert.equal(a.length, 3);
-  for (const m of a) assert.ok(TEMPLATES[m.templateId]);
+  for (const m of a) assert.ok(pack.missions[m.templateId]);
 });
 
 test('mock NPC completes the taxi scene', () => {
-  const r = mockTurn({ mission: { templateId: 'arrival_taxi', params: {} }, state: baseState, history: [{ role: 'player', text: 'Hotel please, 40 dollars' }] });
+  const r = mockTurn({ pack, mission: { templateId: 'arrival_taxi', params: {} }, state: baseState, history: [{ role: 'player', text: 'Hotel please, 40 dollars' }] });
   assert.deepEqual(r.actions.map(a => a.type).sort(), ['agree_price', 'set_destination']);
 });
 
@@ -93,12 +117,12 @@ test('a client-chosen base URL never receives the server keys', () => {
 });
 
 test('helpers', () => {
-  assert.equal(findCatalogItem('grocery', 'Eggs').key, 'eggs');
+  assert.equal(findItem(pack.places.grocery, 'Eggs').key, 'eggs');
   assert.equal(levelFor(950).id, 'B1');
 });
 
 test('saves round-trip and are protected by the owner token', async () => {
-  const server = createApp({ store: memoryStore() }).listen(0);
+  const server = createApp({ store: memoryStore(), packs }).listen(0);
   try {
     const base = `http://127.0.0.1:${server.address().port}/api/save/`;
     const tokenA = 'a'.repeat(32), tokenB = 'b'.repeat(32);
@@ -116,10 +140,26 @@ test('saves round-trip and are protected by the owner token', async () => {
 });
 
 test('without a store the save API reports persistence is off', async () => {
-  const server = createApp().listen(0);
+  const server = createApp({ packs }).listen(0);
   try {
     const port = server.address().port;
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/save/p_abc12345`, { headers: { 'x-save-token': 'a'.repeat(32) } })).status, 503);
     assert.equal((await (await fetch(`http://127.0.0.1:${port}/api/config`)).json()).persistence, false);
+  } finally { server.close(); }
+});
+
+test('the server hands out cities and plays missions of the city asked for', async () => {
+  const server = createApp({ packs }).listen(0);
+  try {
+    const base = `http://127.0.0.1:${server.address().port}/api`;
+    assert.deepEqual((await (await fetch(`${base}/packs`)).json()).map(p => [p.id, p.name]), [['maple-city', 'Maple City']]);
+    assert.equal((await (await fetch(`${base}/packs/maple-city`)).json()).places.bakery.name, pack.places.bakery.name);
+    assert.equal((await fetch(`${base}/packs/atlantis`)).status, 404);
+    const turn = body => fetch(`${base}/npc/turn`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ state: baseState, history: [], settings: { provider: 'mock' }, ...body }) });
+    const ok = await turn({ pack: 'maple-city', mission: { templateId: 'arrival_taxi', params: {} } });
+    assert.equal(ok.status, 200);
+    assert.match((await ok.json()).reply, /Maple City/);
+    assert.equal((await turn({ pack: 'atlantis', mission: { templateId: 'arrival_taxi', params: {} } })).status, 400);
+    assert.equal((await turn({ pack: 'maple-city', mission: { templateId: 'nope', params: {} } })).status, 400);
   } finally { server.close(); }
 });

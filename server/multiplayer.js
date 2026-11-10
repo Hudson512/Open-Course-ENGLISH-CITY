@@ -21,7 +21,7 @@ export function attachMultiplayer(server) {
         if (old && old.ws !== ws) old.ws.close();
         me = {
           ws, id, name: clean(msg.name, 20) || 'Player', level: clean(msg.level, 3) || 'A1',
-          color: Number(msg.color) || 0xffffff, room: clean(msg.room, 20) || 'usa',
+          color: Number(msg.color) || 0xffffff, room: clean(msg.room, 20) || 'lobby',
           x: Number(msg.x) || 0, y: Number(msg.y) || 0, from: clean(msg.from, 30)
         };
         players.set(id, me);

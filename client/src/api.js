@@ -32,12 +32,12 @@ async function post(url, body) {
 
 export const api = {
   config: () => fetch('/api/config').then(r => r.json()),
-  npcTurn: (mission, state, history) => post('/api/npc/turn', { mission, state: snapshot(state), history, settings: llmSettings() }),
+  npcTurn: (mission, state, history) => post('/api/npc/turn', { pack: state.pack, mission, state: snapshot(state), history, settings: llmSettings() }),
   checkChat: (text, nativeLang) => post('/api/chat/check', { text, nativeLang, settings: llmSettings() }),
   test: s => post('/api/llm/test', { settings: s })
 };
 
 // Only what the NPC needs to know
 function snapshot(s) {
-  return { player: s.player, xp: s.xp, money: s.money, home: s.home, flags: s.flags, job: s.job, time: s.time, stats: s.stats };
+  return { player: s.player, xp: s.xp, money: s.money, home: s.home, flags: s.flags, choices: s.choices, log: s.log, job: s.job, time: s.time, stats: s.stats };
 }

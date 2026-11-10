@@ -1,12 +1,9 @@
 // Modal panels: missions, inventory, notebook, phone (taxi), settings, location menus.
-import { h, $, clear, fmtMoney, esc } from './dom.js';
+import { h, $, clear, esc } from './dom.js';
+import { getPack, fmtMoney, arrivalPlace, visitMission, socialMission } from '../pack.js';
 import * as S from '../state.js';
 import { t, tr, setLang } from '../i18n.js';
 import { api, getSettings, saveSettings } from '../api.js';
-import { LOCATIONS, locationById } from '../../../shared/world.js';
-import { NPCS } from '../../../shared/npcs.js';
-import { LOCATION_NPC, missionLocation } from '../../../shared/missions.js';
-import { CATALOG } from '../../../shared/data.js';
 
 let openModal = null;
 export const modalOpen = () => !!openModal;
@@ -36,14 +33,15 @@ export function missionsPanel() {
   const body = h('div', { class: 'mission-list' },
     list.map(m => {
       const info = S.missionInfo(m);
-      const loc = info.location && locationById(info.location);
-      const counter = m.templateId === 'chat_people' ? ` (${m.progress || 0}/${m.params.count})` : m.templateId === 'online_chat' ? ` (${m.progress || 0}/3)` : '';
+      const loc = info.place;
+      const c = S.missionCounter(m);
+      const counter = c ? ` (${c.progress}/${c.target})` : '';
       return h('div', { class: `mission-card ${tracked?.uid === m.uid ? 'tracked' : ''}` },
         h('div', { class: 'mission-kind' }, m.kind === 'story' ? `⭐ ${t('story')}` : m.kind === 'job' ? '💼 Job' : `📅 ${t('daily')}`),
         h('div', { class: 'mission-title' }, info.title + counter),
         h('div', { class: 'mission-goal' }, info.goal),
         h('div', { class: 'mission-meta' },
-          loc ? h('span', {}, `${loc.icon} ${loc.name}`) : h('span', {}, '🌆 Maple City'),
+          loc ? h('span', {}, `${loc.icon} ${loc.name}`) : h('span', {}, `🌆 ${getPack().name}`),
           h('span', {}, `+${info.reward?.xp || 0} XP`),
           info.blocked ? h('span', { class: 'blocked' }, `🔒 ${reqText(info.blocked)}`) : null),
         h('button', { class: tracked?.uid === m.uid ? 'ghost small' : 'primary small', onclick: () => { S.setTracked(m.uid); missionsPanel(); } }, tracked?.uid === m.uid ? `📍 ${t('tracking')}` : t('track')));
@@ -52,16 +50,18 @@ export function missionsPanel() {
   modal(`📋 ${t('missions')}`, body);
 }
 
-export function reqText(code) {
-  return String(code).split(',').map(c => t('req_' + c)).join(', ');
+// What is missing, in words. Cities can invent requirements: unknown ones are shown as written.
+export function reqText(codes) {
+  return [].concat(codes).map(c => { const k = 'req_' + c, s = t(k); return s === k ? String(c).replace(/_/g, ' ') : s; }).join(', ');
 }
 
 // ── Inventory ───────────────────────────────────────────────────
 export function inventoryPanel() {
   const s = S.getState();
+  const home = s.rent && getPack().places[s.rent.place];
   const body = h('div', {},
-    h('div', { class: 'wallet' }, h('b', {}, fmtMoney(s.money)), s.flags.bank ? ' · 🏦 First National Bank' : '', s.job ? ` · 💼 ${s.job.title} ($${s.job.wage}/day)` : ''),
-    s.rent ? h('p', { class: 'muted' }, `🏠 ${s.rent.place === 'hotel' ? 'Hotel Sunrise' : 'Oak Street Apartments'} — $${s.rent.price}${s.rent.place === 'hotel' ? '/night' : '/week'} · paid until day ${s.rent.paidUntilDay}`) : h('p', { class: 'muted' }, `🏠 ${t('noHome')}`),
+    h('div', { class: 'wallet' }, h('b', {}, fmtMoney(s.money)), s.flags.bank ? ' · 🏦 ✓' : '', s.job ? ` · 💼 ${s.job.title} (${fmtMoney(s.job.wage)}/day)` : ''),
+    s.rent ? h('p', { class: 'muted' }, `🏠 ${home?.name || s.rent.place} — ${fmtMoney(s.rent.price)}/${home?.lodging?.per || 'week'} · paid until day ${s.rent.paidUntilDay}`) : h('p', { class: 'muted' }, `🏠 ${t('noHome')}`),
     s.inventory.length ? h('div', { class: 'inv' }, s.inventory.map(i => h('div', { class: 'inv-item' },
       h('span', {}, `${i.qty}× ${i.item}`),
       i.food ? h('button', { class: 'small primary', onclick: () => { S.eatItem(i.item); inventoryPanel(); } }, `${t('eat')} (+${i.food} 🍔)`) : null)))
@@ -113,11 +113,11 @@ export function phonePanel({ onTaxi }) {
       app('📒', t('notebook'), () => notebookPanel()), app('⚙️', t('settings'), settingsPanel)),
     h('h3', {}, `🚕 ${t('taxi')}`),
     s.flags.phone
-      ? h('div', { class: 'taxi-list' }, LOCATIONS.filter(l => l.id !== 'airport').map(l => {
+      ? h('div', { class: 'taxi-list' }, Object.values(getPack().places).filter(l => l.id !== arrivalPlace()).map(l => {
           const d = Math.hypot(l.door.x - s.position.x, l.door.y - s.position.y);
           const cost = Math.round(6 + d / 120);
           return h('button', { class: 'taxi-item', onclick: () => { if (!S.pay(cost)) return S.bus.emit('toast', { text: t('payFail'), kind: 'bad' }); S.advanceTime(Math.round(5 + d / 80)); closeModal(); onTaxi(l); } },
-            `${l.icon} ${l.name}`, h('small', {}, `$${cost}`));
+            `${l.icon} ${l.name}`, h('small', {}, fmtMoney(cost)));
         }))
       : h('p', { class: 'muted' }, t('taxiNeedsPhone')));
   modal(`📱 ${t('phone')}`, body);
@@ -191,14 +191,12 @@ function cloudSection() {
 const field = (label, input) => h('label', { class: 'field' }, h('span', {}, label), input);
 
 // ── Location menu ───────────────────────────────────────────────
-const SHOPS = ['bakery', 'grocery', 'cafe', 'diner', 'phone_store', 'barber', 'clinic'];
-
 export function locationMenu(locId, { onStart, onSleep }) {
   const s = S.getState();
-  const loc = locationById(locId);
+  const loc = getPack().places[locId];
   const opts = [];
   for (const m of S.activeMissions()) {
-    if (missionLocation(m) !== locId) continue;
+    if (S.missionPlace(m) !== locId) continue;
     const info = S.missionInfo(m);
     opts.push(h('button', { class: `opt ${info.blocked ? 'disabled' : 'mission'}`, disabled: !!info.blocked, onclick: () => { closeModal(); onStart(m); } },
       h('b', {}, `${m.kind === 'story' ? '⭐' : m.kind === 'job' ? '💼' : '📅'} ${info.title}`),
@@ -208,14 +206,14 @@ export function locationMenu(locId, { onStart, onSleep }) {
     opts.push(h('button', { class: 'opt', onclick: () => { closeModal(); onSleep(); } }, h('b', {}, `🛏️ ${t('sleepNow')}`), h('small', {}, `⚡ ${Math.round(s.stats.energy)}`)));
     if (s.inventory.some(i => i.food)) opts.push(h('button', { class: 'opt', onclick: () => inventoryPanel() }, h('b', {}, `🍽️ ${t('eat')}`), h('small', {}, s.inventory.filter(i => i.food).map(i => i.item).join(', '))));
   }
-  const npcId = LOCATION_NPC[locId];
-  const npc = NPCS[npcId];
-  if (SHOPS.includes(locId)) {
-    const sample = Object.keys(CATALOG[locId] || {}).slice(0, 4).join(', ');
-    opts.push(h('button', { class: 'opt', onclick: () => { closeModal(); onStart({ uid: `free-${locId}`, templateId: 'shop', params: { place: locId }, kind: 'free' }); } },
-      h('b', {}, `${npc?.emoji || '💬'} ${t('freeTalk')} — ${npc?.name || ''}`), h('small', {}, sample + '…')));
-  } else if (npc && (locId !== 'airport' || s.missions.storyIndex > 0)) {
-    opts.push(h('button', { class: 'opt', onclick: () => { closeModal(); onStart({ uid: `talk-${npcId}`, templateId: 'smalltalk', params: { name: npc.name, persona: `${npc.role}. ${npc.persona}`, emoji: npc.emoji, gender: npc.voice?.gender, role: npc.role }, kind: 'free' }); } },
+  // Outside missions: shop freely where something is sold, otherwise just chat with whoever is there.
+  const npc = loc.character;
+  const stock = Object.keys({ ...loc.sells, ...loc.services });
+  if (stock.length && visitMission()) {
+    opts.push(h('button', { class: 'opt', onclick: () => { closeModal(); onStart({ uid: `free-${locId}`, templateId: visitMission(), params: { place: locId }, kind: 'free' }); } },
+      h('b', {}, `${npc?.emoji || '💬'} ${t('freeTalk')} — ${npc?.name || ''}`), h('small', {}, stock.slice(0, 4).join(', ') + '…')));
+  } else if (npc && socialMission() && (locId !== arrivalPlace() || s.missions.storyIndex > 0)) {
+    opts.push(h('button', { class: 'opt', onclick: () => { closeModal(); onStart({ uid: `talk-${locId}`, templateId: socialMission(), params: { name: npc.name, persona: `${npc.role}. ${npc.persona}`, emoji: npc.emoji, voice: npc.voice, role: npc.role }, kind: 'free' }); } },
       h('b', {}, `${npc.emoji} ${t('talk')} ${npc.name}`), h('small', {}, npc.role)));
   }
   modal(`${loc.icon} ${loc.name}`, h('div', { class: 'opts' }, opts));

@@ -1,0 +1,305 @@
+# Every place the player can enter in London: the building, who works there, what it sells and useful vocabulary.
+# To add a place, copy one block, change the id (first line) and move the building to a free spot.
+
+airport:
+  name: "London Kingsway Airport"
+  short: "Airport"
+  icon: ✈️
+  building: { at: [2, 18], size: [14, 24], door: right, color: "#8fa3b8", roof: "#5d7085" }
+  character:
+    id: cab_driver
+    name: "Terry"
+    emoji: 🚖
+    voice: { gender: male, rate: 1 }
+    role: "Black cab driver at the airport taxi rank"
+    persona: >
+      Terry Marsh, 58, proper London cabbie for 30 years, knows every street by heart.
+      Chatty and cheeky, a firm but fair negotiator. Says "guv", "love", "mate", "blimey",
+      "tell you what". Supports Arsenal and complains about roadworks and cycle lanes.
+
+phone_shop:
+  name: "MobiWorld"
+  short: "Phone shop"
+  icon: 📱
+  building: { at: [24, 2], size: [10, 9], door: bottom, color: "#6c5ce7", roof: "#4834d4" }
+  character:
+    id: phone_assistant
+    name: "Amir"
+    emoji: 📱
+    voice: { gender: male, rate: 1.05 }
+    role: "Sales assistant at MobiWorld"
+    persona: >
+      Amir Hussain, 26, upbeat sales assistant. Explains pay-as-you-go vs a monthly contract,
+      data (GB), minutes and texts, and how to top up. Asks if the customer's phone is
+      unlocked. Tries to sell a screen protector.
+  sells:
+    pay-as-you-go SIM: { price: 10.00, effects: [{ set_flag: phone }] }
+    monthly contract:  { price: 25.00, effects: [{ set_flag: phone }] }
+    phone charger:     { price: 12.99 }
+    screen protector:  { price: 7.99 }
+  vocabulary: ["pay-as-you-go", "top up", "contract", "mobile", "unlocked", "SIM card", "signal", "a month"]
+
+tube:
+  name: "Kingsway Underground Station"
+  short: "Tube station"
+  icon: 🚇
+  building: { at: [38, 2], size: [11, 9], door: bottom, color: "#dc241f", roof: "#0019a8" }
+  character:
+    id: station_staff
+    name: "Winston"
+    emoji: 🚇
+    voice: { gender: male, rate: 0.95 }
+    role: "Customer service assistant at the ticket hall of the Underground station"
+    persona: >
+      Winston Clarke, 55, patient and good-humoured, 20 years on the Underground. Explains
+      the Oyster card (a travel card you top up), zones, peak and off-peak fares, and that
+      you must touch in and touch out. Says "mind the gap" and "there you go".
+  sells:
+    Oyster card:       { price: 7.00, effects: [{ set_flag: oyster }] }
+    weekly Travelcard: { price: 42.00 }
+    Tube map:          { price: 1.50 }
+  vocabulary: ["Oyster card", "top up", "touch in / touch out", "zones", "off-peak", "single / return", "platform", "mind the gap"]
+
+hostel:
+  name: "Wanderers Hostel"
+  short: "Hostel"
+  icon: 🛏️
+  building: { at: [24, 18], size: [10, 9], door: top, color: "#e17055", roof: "#b44a32" }
+  character:
+    id: receptionist
+    name: "Sophie"
+    emoji: 🛎️
+    voice: { gender: female, rate: 1.05 }
+    role: "Receptionist at Wanderers Hostel"
+    persona: >
+      Sophie Bennett, 24, friendly Australian-born receptionist who has lived in London for
+      years. Relaxed but organised: needs a name, number of nights and payment. Explains
+      dorm beds, lockers, the shared kitchen and quiet hours.
+  lodging: { per: night, price: 35, min: 26, max: 48, max_nights: 14 }
+
+flat:
+  name: "Albion Road Flatshare"
+  short: "Flatshare"
+  icon: 🏘️
+  building: { at: [36, 18], size: [11, 9], door: top, color: "#b08968", roof: "#7f5539" }
+  character:
+    id: landlady
+    name: "Mrs. Okafor"
+    emoji: 🔑
+    voice: { gender: female, rate: 0.95 }
+    role: "Landlady of a shared flat on Albion Road"
+    persona: >
+      Grace Okafor, 59, retired midwife who rents rooms in her terraced house. Warm but
+      careful about who moves in. Asks about work, how long they will stay and whether
+      they smoke. Explains the house rules (bins out on Thursdays, no noise after 10 pm,
+      keep the kitchen tidy) and that bills are included.
+  lodging: { per: week, price: 160, min: 130, max: 200 }
+
+bakery:
+  name: "Crumbs & Co. Bakery"
+  short: "Bakery"
+  icon: 🥐
+  building: { at: [24, 34], size: [9, 8], door: bottom, color: "#fdcb6e", roof: "#e1a32b" }
+  character:
+    id: baker
+    name: "Maggie"
+    emoji: 👩‍🍳
+    voice: { gender: female, rate: 1 }
+    role: "Owner of Crumbs & Co. Bakery"
+    persona: >
+      Maggie Doyle, 52, cheerful Irish baker who calls customers "love" and "darling".
+      Proud of her sausage rolls, recommends what has just come out of the oven and asks
+      "eat in or take away?".
+  sells:
+    sausage roll:    { price: 2.20, food: 22 }
+    scone:           { price: 1.80, food: 15 }
+    croissant:       { price: 2.10, food: 18 }
+    loaf of bread:   { price: 2.90, food: 35 }
+    sourdough loaf:  { price: 4.20, food: 40 }
+    cheese pasty:    { price: 3.50, food: 30 }
+    jam doughnut:    { price: 1.40, food: 12 }
+    flapjack:        { price: 1.90, food: 14 }
+    cup of tea:      { price: 1.60, food: 2, energy: 8, consume: now }
+  vocabulary: ["eat in or take away", "a loaf of", "freshly baked", "half a dozen", "Could I have…?", "How much is…?", "receipt", "change"]
+
+barber:
+  name: "The Gentleman's Chop"
+  short: "Barber's"
+  icon: 💈
+  building: { at: [35, 34], size: [8, 8], door: bottom, color: "#74b9ff", roof: "#0984e3" }
+  character:
+    id: barber
+    name: "Deniz"
+    emoji: 💈
+    voice: { gender: male, rate: 1.05 }
+    role: "Barber at The Gentleman's Chop"
+    persona: >
+      Deniz Yilmaz, 33, Turkish-British barber, quick with a joke, talks football all day.
+      Asks precise questions about the cut: "What grade on the sides? Square or tapered at
+      the back? Shall I tidy up the beard?"
+  services:
+    haircut:                { price: 16.00, effects: [{ stat: { social: 12 } }] }
+    beard trim:             { price: 8.00,  effects: [{ stat: { social: 12 } }] }
+    haircut and beard trim: { price: 22.00, effects: [{ stat: { social: 12 } }] }
+    wet shave:              { price: 14.00, effects: [{ stat: { social: 12 } }] }
+    skin fade:              { price: 20.00, effects: [{ stat: { social: 12 } }] }
+  vocabulary: ["short back and sides", "grade 2", "a tidy-up", "fringe", "clippers", "tapered", "beard", "parting"]
+
+pub:
+  name: "The Red Lion"
+  short: "Pub"
+  icon: 🍺
+  building: { at: [45, 33], size: [9, 9], door: bottom, color: "#c0392b", roof: "#6d2018" }
+  character:
+    id: bartender
+    name: "Liam"
+    emoji: 🍽️
+    voice: { gender: male, rate: 1 }
+    role: "Bartender at The Red Lion pub"
+    persona: >
+      Liam O'Connor, 29, easy-going bartender. In a pub you order and pay at the bar: he
+      asks "What can I get you?", your table number for food, and "Anything else?". Says
+      "cheers" for thank you and "ta". Happy to explain what the dishes are.
+  sells:
+    fish and chips:       { price: 13.50, food: 60, consume: now }
+    steak and ale pie:    { price: 12.50, food: 55, consume: now }
+    bangers and mash:     { price: 11.00, food: 50, consume: now }
+    Sunday roast:         { price: 15.00, food: 65, consume: now }
+    ploughman's lunch:    { price: 9.50,  food: 40, consume: now }
+    bowl of chips:        { price: 4.00,  food: 20, consume: now }
+    sticky toffee pudding: { price: 6.00, food: 22, consume: now }
+    lemonade:             { price: 2.80,  food: 3,  consume: now }
+    ginger beer:          { price: 3.20,  food: 3,  consume: now }
+  vocabulary: ["order at the bar", "table number", "What can I get you?", "cheers", "a pint of", "chips", "the bill", "Anything else?"]
+
+supermarket:
+  name: "Fairway Supermarket"
+  short: "Supermarket"
+  icon: 🛒
+  building: { at: [61, 18], size: [14, 10], door: top, color: "#55efc4", roof: "#00b894" }
+  character:
+    id: shop_assistant
+    name: "Hannah"
+    emoji: 🧑‍💼
+    voice: { gender: female, rate: 1 }
+    role: "Shop assistant at Fairway Supermarket"
+    persona: >
+      Hannah Reid, 21, university student working weekends. Helpful and polite, tells
+      customers which aisle things are in (dairy aisle 2, fruit and veg by the entrance,
+      rice and pasta aisle 4, toiletries aisle 7). Asks "Do you need a bag? They're 10p"
+      and "Have you got a Fairway card?".
+  sells:
+    milk:           { price: 1.45, food: 15 }
+    eggs:           { price: 2.60, food: 30 }
+    rice:           { price: 1.80, food: 35 }
+    pasta:          { price: 0.95, food: 30 }
+    apples:         { price: 1.90, food: 15 }
+    bananas:        { price: 0.90, food: 15 }
+    chicken breast: { price: 4.50, food: 40 }
+    cheddar cheese: { price: 3.20, food: 20 }
+    baked beans:    { price: 0.85, food: 18 }
+    orange juice:   { price: 1.75, food: 10 }
+    tea bags:       { price: 2.40, food: 2 }
+    bread:          { price: 1.35, food: 30 }
+    crisps:         { price: 1.10, food: 8 }
+    toothpaste:     { price: 1.80 }
+    washing-up liquid: { price: 1.25 }
+    loo roll:       { price: 3.50 }
+  vocabulary: ["aisle", "till", "trolley", "carrier bag", "on offer", "fruit and veg", "queue", "a kilo of"]
+
+cafe:
+  name: "The Daily Grind"
+  short: "Café"
+  icon: ☕
+  building: { at: [77, 18], size: [9, 9], door: top, color: "#d4a373", roof: "#9c6644" }
+  character:
+    id: barista
+    name: "Ellie"
+    emoji: ☕
+    voice: { gender: female, rate: 1.1 }
+    role: "Barista at The Daily Grind"
+    persona: >
+      Ellie Morgan, 23, Welsh barista and drama student. Asks regular or large, which milk,
+      "eat in or take away?". Says "lovely", "no worries" and "there you go".
+  sells:
+    flat white:        { price: 3.40, food: 4, energy: 12, consume: now }
+    cappuccino:        { price: 3.50, food: 5, energy: 12, consume: now }
+    pot of tea:        { price: 2.60, food: 2, energy: 8, consume: now }
+    hot chocolate:     { price: 3.30, food: 8, consume: now }
+    orange juice:      { price: 2.90, food: 6, consume: now }
+    bacon sandwich:    { price: 4.80, food: 35, consume: now }
+    cheese toastie:    { price: 5.20, food: 35, consume: now }
+    slice of cake:     { price: 3.60, food: 18, consume: now }
+  vocabulary: ["regular / large", "take away", "oat milk", "decaf", "Could I get…?", "I'll have…", "toastie", "contactless"]
+
+bank:
+  name: "Thames & County Bank"
+  short: "Bank"
+  icon: 🏦
+  building: { at: [61, 35], size: [11, 7.5], door: bottom, color: "#dfe6e9", roof: "#95a5a6" }
+  character:
+    id: bank_adviser
+    name: "Mr. Hughes"
+    emoji: 🏦
+    voice: { gender: male, rate: 0.95 }
+    role: "Personal banking adviser at Thames & County Bank"
+    persona: >
+      Gareth Hughes, 47, formal and careful. To open a current account he needs: a passport,
+      proof of a UK address, and a UK mobile number. Explains the debit card, contactless
+      payments, current vs savings accounts, sort code and account number.
+
+surgery:
+  name: "Kingsway GP Surgery"
+  short: "GP surgery"
+  icon: 🏥
+  building: { at: [74, 35], size: [12, 7.5], door: bottom, color: "#ffffff", roof: "#005eb8" }
+  character:
+    id: gp
+    name: "Dr. Ahmed"
+    emoji: 🩺
+    voice: { gender: female, rate: 0.95 }
+    role: "GP (family doctor) at Kingsway GP Surgery"
+    persona: >
+      Dr. Samira Ahmed, 44, calm and reassuring GP. Asks what the problem is, how long it
+      has been going on, pain from 1 to 10, allergies. Explains treatment in simple words
+      and says to see the chemist for medicine.
+  services:
+    appointment:  { price: 30.00, health: 40 }
+    prescription: { price: 9.90, health: 20 }
+    health check: { price: 22.00, health: 25 }
+  vocabulary: ["appointment", "symptoms", "temperature", "headache", "sore throat", "prescription", "allergic to", "chemist"]
+
+job_centre:
+  name: "Kingsway Jobcentre"
+  short: "Jobcentre"
+  icon: 💼
+  building: { at: [61, 50], size: [12, 10], door: top, color: "#a29bfe", roof: "#6c5ce7" }
+  character:
+    id: work_coach
+    name: "Ms. Campbell"
+    emoji: 💼
+    voice: { gender: female, rate: 1 }
+    role: "Work coach and recruiter at the Jobcentre"
+    persona: >
+      Fiona Campbell, 41, Scottish, direct but encouraging. Conducts realistic job
+      interviews: "Tell me a bit about yourself", "Why are you interested in this role?",
+      "What would you say are your strengths and weaknesses?", "Tell me about a time you
+      solved a problem", plus 1-2 practical questions about the candidate's profession.
+
+offices:
+  name: "Canal Wharf Offices"
+  short: "Offices"
+  icon: 🏙️
+  building: { at: [94, 19], size: [13, 20], door: left, color: "#636e72", roof: "#2d3436" }
+  character:
+    id: manager
+    name: "James"
+    emoji: 👨‍💼
+    voice: { gender: male, rate: 1.05 }
+    role: "Team manager at the workplace"
+    persona: >
+      James Whitfield, 43, polite, understated manager who rarely says exactly what he
+      means ("that's quite interesting" = he is not convinced). Gives realistic daily work
+      situations: a team catch-up, a problem with a client, a task to explain, a deadline
+      to negotiate. Uses British workplace English ("shall we", "could you possibly",
+      "by close of play", "I'm on annual leave").
