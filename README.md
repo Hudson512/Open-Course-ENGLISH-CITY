@@ -45,6 +45,7 @@ Open **http://localhost:3000**. Three containers start: `frontend` (nginx servin
 - Another port: `WEB_PORT=8000 docker compose up`.
 - Ollama on your machine: `LLM_PROVIDER=ollama` and `LLM_BASE_URL=http://host.docker.internal:11434/v1`.
 - `docker compose down` stops everything and keeps the data; `docker compose down -v` also deletes the saves.
+- Shortcuts: `make up`, `make stop`, `make restart`, `make logs`, `make db-backup`… run `make` to see them all.
 
 Without Docker the game keeps progress in the browser only, unless you set `DATABASE_URL` to a Postgres of your own.
 

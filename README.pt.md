@@ -45,6 +45,7 @@ Abre **http://localhost:3000**. Arrancam três contentores: `frontend` (nginx a 
 - Outra porta: `WEB_PORT=8000 docker compose up`.
 - Ollama na tua máquina: `LLM_PROVIDER=ollama` e `LLM_BASE_URL=http://host.docker.internal:11434/v1`.
 - `docker compose down` pára tudo e mantém os dados; `docker compose down -v` apaga também os saves.
+- Atalhos: `make up`, `make stop`, `make restart`, `make logs`, `make db-backup`… corre `make` para ver todos.
 
 Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `DATABASE_URL` com um Postgres teu.
 
