@@ -162,7 +162,7 @@ export async function settingsPanel() {
       h('button', { class: 'primary', onclick: () => { saveSettings(values()); status.textContent = '✅ ' + t('save'); } }, t('save'))),
     status,
     h('h3', {}, '🎧 Audio & UI'),
-    chk('voice', t('voice')), chk('mic', t('mic')), chk('autoTranslate', t('showTranslation')), chk('checkChat', t('checkChat')),
+    chk('voice', t('voice')), chk('mic', t('mic')), chk('handsFree', t('handsFree')), chk('autoTranslate', t('showTranslation')), chk('checkChat', t('checkChat')),
     field(t('uiLang'), lang),
     ...(cfg.persistence ? cloudSection() : []),
     S.getState() ? h('button', { class: 'danger small', onclick: () => { if (confirm(t('confirmReset'))) { S.wipe(); location.reload(); } } }, `🗑 ${t('resetSave')}`) : null);

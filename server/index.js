@@ -12,6 +12,7 @@ import { viewMission } from '../shared/engine.js';
 import { loadPacks, packSummary } from './packs.js';
 import { postgresStore, validId, validToken } from './db.js';
 import { deepgramVoices, pickVoice, MAX_TTS_CHARS } from './tts.js';
+import { listeningServer } from './stt.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8787);
@@ -33,6 +34,7 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
       serverHasKey: Boolean((p.envKey && process.env[p.envKey]) || process.env.LLM_API_KEY || p.noKey || p.kind === 'mock'),
       persistence: Boolean(store),
       voices: Boolean(voices),
+      listening: Boolean(voices?.listen),
       allowClientKeys: String(process.env.ALLOW_CLIENT_KEYS ?? 'true') !== 'false',
       presets: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, { model: v.model, models: v.models || [], baseUrl: v.baseUrl || '', needsKey: !v.noKey && v.kind !== 'mock' }]))
     });
@@ -162,18 +164,28 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
   return app;
 }
 
+// Websockets: /ws is the multiplayer city, /ws/listen is the player's microphone (see stt.js).
+export function attachSockets(server, { voices = null } = {}) {
+  const routes = { '/ws': attachMultiplayer(), '/ws/listen': listeningServer(voices) };
+  server.on('upgrade', (req, socket, head) => {
+    const wss = routes[new URL(req.url, 'http://x').pathname];
+    if (!wss) return socket.destroy();
+    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
+  });
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const store = process.env.DATABASE_URL ? await postgresStore(process.env.DATABASE_URL) : null;
   const packs = loadPacks();
   const voices = deepgramVoices();
   const server = http.createServer(createApp({ store, packs, voices }));
-  attachMultiplayer(server);
+  attachSockets(server, { voices });
   server.listen(PORT, HOST, () => {
     const provider = process.env.LLM_PROVIDER || 'mock';
     console.log(`\n🗽  OpenCourse English City running → http://localhost:${PORT}`);
     console.log(`    LLM provider (server default): ${provider}${provider === 'mock' ? ' (offline — add a key in .env or in the game Settings)' : ''}`);
     console.log(`    Cities: ${Object.values(packs).map(p => p.name).join(', ') || 'none (check packs/)'}`);
-    console.log(`    Voices: ${voices ? 'Deepgram Aura-2' : 'browser voices (set DEEPGRAM_API_KEY for natural ones)'}`);
+    console.log(`    Voices: ${voices ? 'Deepgram (Aura-2 voices, Flux listening)' : 'browser voices (set DEEPGRAM_API_KEY for natural ones)'}`);
     console.log(`    Saves: ${store ? 'Postgres (server-side)' : 'browser only (set DATABASE_URL to persist on the server)'}`);
     console.log(`    Friends on your network can join at http://<your-ip>:${PORT}\n`);
   });

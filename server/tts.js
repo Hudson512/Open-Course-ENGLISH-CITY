@@ -1,7 +1,9 @@
-// Character voices with Deepgram Aura-2 text-to-speech (optional: set DEEPGRAM_API_KEY).
-// Without a key the game keeps using the browser's own voices.
+// Deepgram (optional: set DEEPGRAM_API_KEY): character voices with Aura-2 text-to-speech, and the
+// connection to Flux speech-to-text that listens to the player's microphone (see stt.js).
+// Without a key the game keeps using the browser's own voices and speech recognition.
 // Docs: https://developers.deepgram.com/docs/text-to-speech
 import { Readable } from 'node:stream';
+import WebSocket from 'ws';
 
 // Aura-2 voices by accent (https://developers.deepgram.com/docs/tts-models).
 // A character with no voice of its own gets one of these for its city's language and its gender.
@@ -32,6 +34,8 @@ export function pickVoice({ language = 'en-US', gender = 'female', name = '', mo
 export function deepgramVoices(key = process.env.DEEPGRAM_API_KEY, fetchFn = fetch) {
   if (!key) return null;
   return {
+    // Opens a listening connection to Deepgram (`url` comes from stt.js) → a websocket
+    listen: url => new WebSocket(url, { headers: { authorization: `Token ${key}` } }),
     // → { ok, status, type, stream } with the audio as MP3
     async speak(text, model) {
       const res = await fetchFn(`https://api.deepgram.com/v1/speak?model=${encodeURIComponent(model)}`, {

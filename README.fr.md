@@ -59,7 +59,7 @@ Sans Docker, le jeu garde la progression uniquement dans le navigateur, sauf si 
 | 🌆 **Monde ouvert** | Chaque ville a sa propre carte : des routes, de la circulation (les voitures freinent… mais attention en traversant !), un parc, 13–14 lieux où entrer, des piétons avec leur personnalité, un cycle jour/nuit, une mini-carte et une flèche GPS. |
 | 🤖 **PNJ IA** | Dans chaque ville, un personnage par lieu (boulangère, barbier, conseiller bancaire, recruteuse…) + 8 piétons, qui parlent l'anglais du pays : *line* et *apartment* à Maple City, *queue* et *flat* à Londres. L'IA adapte son langage à votre niveau (A1→C2), reste dans son personnage et **agit dans le monde** (vend, encaisse, loue, embauche) par des actions validées par le jeu. |
 | 🧑‍🏫 **Coach invisible** | Chacune de vos phrases reçoit une note de 0 à 100, une version corrigée/naturelle, des conseils dans votre langue, des mots nouveaux (ajoutés au carnet) et des suggestions de réponse. Traduction automatique aux niveaux A1/A2. |
-| 🎤 **Voix** | Les PNJ parlent et vous pouvez répondre au micro (Chrome/Edge). Avec une clé [Deepgram](https://deepgram.com), les personnages ont des voix naturelles avec l'accent de leur ville ; sans clé, c'est la synthèse vocale du navigateur. |
+| 🎤 **Voix** | Les PNJ parlent et vous répondez au micro : maintenez 🎤 pour parler et relâchez pour envoyer, comme un message vocal, ce qui laisse le temps de réfléchir. Avec une clé [Deepgram](https://deepgram.com), les personnages ont des voix naturelles avec l'accent de leur ville, votre parole est comprise dans tous les navigateurs, et un mode **mains libres** facultatif remarque quand vous avez fini de parler (il attend plus longtemps pour les débutants). Sans clé, ce sont les outils vocaux du navigateur (Chrome/Edge). |
 | ❤️ **Survie** | La faim, l'énergie, le social et la santé baissent avec le temps. Mangez, dormez, discutez. Si vous vous évanouissez, vous payez l'hôpital ; 3 évanouissements = retour au pays (fin de partie). Le loyer est prélevé automatiquement — sans argent, vous êtes expulsé. |
 | ⭐ **Histoire** | Taxi → logement → numéro de téléphone → compte bancaire → **entretien d'embauche dans votre domaine** → journées de travail avec salaire. Londres ajoute l'achat d'une carte Oyster à la station de métro. |
 | 📅 **Missions quotidiennes** | Générées chaque jour : courses à la boulangerie, au supermarché ou au café, déjeuner au diner ou au pub, coupe de cheveux précise, parler aux piétons, parler à de vrais joueurs. |
@@ -97,7 +97,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 **Gratuit et privé :** installez [Ollama](https://ollama.com), lancez `ollama pull llama3.1` et choisissez `ollama` dans les Paramètres. Les petits modèles respectent moins bien les règles du JSON ; ≥ 8B est recommandé.
 
-**Voix naturelles (facultatif) :** ajoutez `DEEPGRAM_API_KEY=...` à `.env` et les personnages parlent avec des voix [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) — américaines à Maple City, britanniques à Londres. La clé reste sur le serveur. Sans elle, ce sont les voix du navigateur.
+**Voix naturelles et meilleure écoute (facultatif) :** ajoutez `DEEPGRAM_API_KEY=...` à `.env`. Les personnages parlent alors avec des voix [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) — américaines à Maple City, britanniques à Londres — et votre micro est transcrit par [Deepgram Flux](https://developers.deepgram.com/docs/flux/quickstart), qui permet aussi la conversation mains libres (⚙️ Paramètres). L'audio passe par le serveur du jeu : la clé n'arrive jamais dans le navigateur. Sans elle, ce sont les voix et la reconnaissance vocale du navigateur.
 
 ### Jouer avec des amis (LAN / même réseau)
 
@@ -118,6 +118,7 @@ client/            Vite + Phaser 3 (monde) + DOM (HUD, dialogues, menus)
   src/scenes/      WorldScene : carte, physique, piétons, circulation, caméras, GPS
   src/ui/          hud, dialog (conversation avec l'IA), panels, screens
   src/state.js     état, survie, application des actions, XP, vocabulaire, sauvegarde (localStorage)
+  src/flux.js      micro → serveur → Deepgram Flux ; speech.js : voix et solution de repli du navigateur
 server/            Node + Express + ws
   index.js         API : /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
   packs.js         compile les villes de packs/ au démarrage du serveur
@@ -126,6 +127,8 @@ server/            Node + Express + ws
   llm.js           client multi-fournisseur + analyse robuste du JSON
   mock.js          PNJ hors ligne par règles
   multiplayer.js   présence, positions, chat de proximité
+  tts.js           voix des personnages avec Deepgram Aura-2 (facultatif)
+  stt.js           relaie le micro vers Deepgram Flux, reconnaissance vocale (facultatif)
 shared/            utilisé par le client ET le serveur
   engine.js        les règles : missions, validation des actions, effets, générateur quotidien
   pack.js          lire une ville : modèles de texte et conditions

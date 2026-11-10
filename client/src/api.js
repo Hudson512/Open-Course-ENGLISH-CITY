@@ -4,7 +4,7 @@ const SETTINGS_KEY = 'oceg-settings-v1';
 const DEFAULTS = {
   provider: '', // '' = use the server default (.env)
   apiKey: '', model: '', baseUrl: '',
-  voice: true, mic: true, autoTranslate: true, checkChat: false,
+  voice: true, mic: true, handsFree: false, autoTranslate: true, checkChat: false,
   uiLang: (navigator.language || 'pt').startsWith('pt') ? 'pt' : 'en'
 };
 

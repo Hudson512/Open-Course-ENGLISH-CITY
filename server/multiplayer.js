@@ -4,8 +4,9 @@ import { WebSocketServer } from 'ws';
 const CHAT_RADIUS = 450;
 const TICK_MS = 100;
 
-export function attachMultiplayer(server) {
-  const wss = new WebSocketServer({ server, path: '/ws' });
+// Returns the websocket server; index.js hands it the upgrade requests for /ws.
+export function attachMultiplayer() {
+  const wss = new WebSocketServer({ noServer: true });
   const players = new Map(); // id -> {ws, id, name, x, y, level, color, room, dir}
 
   const send = (ws, msg) => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); };
@@ -59,13 +60,14 @@ export function attachMultiplayer(server) {
     for (const p of players.values()) if (p.room === room && p.id !== exceptId) send(p.ws, msg);
   }
 
-  setInterval(() => {
+  wss.on('close', () => clearInterval(ticker));
+  const ticker = setInterval(() => {
     const byRoom = {};
     for (const p of players.values()) (byRoom[p.room] ||= []).push({ id: p.id, name: p.name, x: Math.round(p.x), y: Math.round(p.y), level: p.level, color: p.color, dir: p.dir });
     for (const p of players.values()) send(p.ws, { t: 'state', players: byRoom[p.room].filter(o => o.id !== p.id) });
   }, TICK_MS).unref();
 
-  return { count: () => players.size };
+  return wss;
 }
 
 function clean(s, max) {

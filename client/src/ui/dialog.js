@@ -2,7 +2,8 @@
 import { h, $, clear, esc } from './dom.js';
 import * as S from '../state.js';
 import { api, getSettings } from '../api.js';
-import { speak, stopSpeaking, listen, micSupported } from '../speech.js';
+import { speak, stopSpeaking, listen, micSupported, serverListens } from '../speech.js';
+import { listenFlux, keytermsFor, canCapture } from '../flux.js';
 import { t } from '../i18n.js';
 import { getPack, fmtMoney } from '../pack.js';
 
@@ -41,12 +42,18 @@ export function openDialog(mission, { onClose } = {}) {
       h('button', { class: 'ghost close', onclick: () => closeDialog() }, '✕')),
     h('div', { class: 'dlg-goal' }, h('b', {}, info.title), h('div', {}, info.goal)),
     log, banner, sugg,
-    h('div', { class: 'dlg-input-row' }, micSupported && settings.mic ? micBtn : null, input, sendBtn),
+    h('div', { class: 'dlg-input-row' }, settings.mic && (micSupported || canCapture) ? micBtn : null, input, sendBtn),
     h('div', { class: 'dlg-foot' }, hintBtn, vocabRow)
   );
   $('#overlay').append(panel);
 
-  current = { mission, history: [], done: [], playerTurns: 0, busy: false, completed: new Set(), panel, onClose, ended: false, rec: null };
+  current = { mission, history: [], done: [], playerTurns: 0, busy: false, completed: new Set(), panel, onClose, ended: false, rec: null, live: null };
+  // With Deepgram on the server the microphone goes through Flux (any browser, better with accents);
+  // otherwise through the browser's own recogniser.
+  let useFlux = false, speaking = false, muted = false;
+  const keyterms = keytermsFor(info);
+  const mineNow = current;
+  serverListens().then(yes => { if (current !== mineNow) return; useFlux = yes && canCapture; if (useFlux && settings.mic && settings.handsFree) startHandsFree(); });
   input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') send(); if (e.key === 'Escape') closeDialog(); });
   setTimeout(() => input.focus(), 50);
   requestTurn();
@@ -76,6 +83,7 @@ export function openDialog(mission, { onClose } = {}) {
   async function requestTurn(lastPlayerEl) {
     if (!current) return;
     current.busy = true;
+    syncLive();
     const typing = h('div', { class: 'msg npc typing' }, h('div', { class: 'bubble' }, `${meta.name} ${t('thinking')}`));
     log.append(typing); log.scrollTop = log.scrollHeight;
     sendBtn.disabled = true;
@@ -85,7 +93,11 @@ export function openDialog(mission, { onClose } = {}) {
       typing.remove();
       current.history.push({ role: 'npc', text: res.reply });
       addMsg('npc', res.reply, res);
-      if (getSettings().voice) speak(res.reply, { ...meta.voice, level: S.levelFor(S.getState().xp).id });
+      if (getSettings().voice) {
+        speaking = true;                       // hands-free waits until the character has finished
+        const mine = current;
+        speak(res.reply, { ...meta.voice, level: S.levelFor(S.getState().xp).id }).finally(() => { if (current === mine) { speaking = false; syncLive(); } });
+      }
 
       if (res.feedback && lastPlayerEl) {
         lastPlayerEl.append(feedbackBlock(res.feedback));
@@ -103,7 +115,7 @@ export function openDialog(mission, { onClose } = {}) {
       // let the player retry by sending again
       if (current?.history.at(-1)?.role === 'player') current.retry = true;
     } finally {
-      if (current) current.busy = false;
+      if (current) { current.busy = false; syncLive(); }
       sendBtn.disabled = false;
       log.scrollTop = log.scrollHeight;
     }
@@ -178,12 +190,44 @@ export function openDialog(mission, { onClose } = {}) {
     requestTurn(el);
   }
 
+  const micError = err => (String(err).startsWith('flux') ? t('micLost') : err);
+
+  // Hands-free (Settings): the microphone stays open and Deepgram decides when the player has
+  // finished a turn, waiting longer for beginners. While the character is thinking or speaking the
+  // microphone is paused, so the character never answers its own voice. Click 🎤 to pause/resume.
+  function startHandsFree() {
+    const mine = current;
+    mine.live = listenFlux({
+      handsFree: true, level, keyterms,
+      onPartial: txt => { if (current === mine) input.value = txt; },
+      onTurn: txt => { if (current !== mine || mine.busy) return; input.value = txt; send(); },
+      onError: err => {
+        mine.live = null;
+        micBtn.classList.remove('live', 'rec');
+        micBtn.title = t('holdToTalk');
+        if (current === mine) addGame(`🎤 ${['not-allowed', 'no-microphone'].includes(err) ? t('micBlocked') : micError(err)}`, 'bad');
+      }
+    });
+    micBtn.title = t('micToggle');
+    addGame(`🎤 ${t('handsFreeOn')}`);
+    syncLive();
+  }
+  // Listen only when it is the player's turn to speak.
+  function syncLive() {
+    if (!current?.live) return;
+    const listening = !(muted || current.busy || speaking);
+    current.live.pause(!listening);
+    micBtn.classList.toggle('live', listening);
+    input.placeholder = listening ? t('listening').split('…')[0] + '…' : t('typeHere');
+  }
+
   // The microphone works like a voice message: hold the button (or Space/Enter on it) to record,
   // release to send. Pauses do not send anything, so the player can take the time they need.
   function holdToTalk(btn) {
     let startedAt = 0;
     const begin = () => {
-      if (!current || current.rec || current.busy) return;
+      if (!current || current.rec || current.busy || current.live) return;
+      if (!useFlux && !micSupported) return addGame(`🎤 ${t('micBlocked')}`, 'bad');
       stopSpeaking();
       startedAt = Date.now();
       input.value = '';
@@ -191,7 +235,8 @@ export function openDialog(mission, { onClose } = {}) {
       btn.classList.add('rec');
       const mine = current;
       const done = () => { btn.classList.remove('rec'); input.placeholder = t('typeHere'); mine.rec = null; };
-      mine.rec = listen({
+      const start = useFlux ? opts => listenFlux({ ...opts, level, keyterms }) : listen;
+      mine.rec = start({
         onPartial: txt => { if (current === mine) input.value = txt; },
         onDone: txt => {
           const quick = Date.now() - startedAt < 400;
@@ -201,7 +246,7 @@ export function openDialog(mission, { onClose } = {}) {
           if (txt) send();
           else addGame(`🎤 ${t(quick ? 'holdToTalk' : 'heardNothing')}`);
         },
-        onError: err => { done(); if (current === mine) addGame(`🎤 ${['not-allowed', 'service-not-allowed'].includes(err) ? t('micBlocked') : err}`, 'bad'); }
+        onError: err => { done(); if (current === mine) addGame(`🎤 ${['not-allowed', 'service-not-allowed'].includes(err) ? t('micBlocked') : micError(err)}`, 'bad'); }
       });
       if (!mine.rec) done();
     };
@@ -210,6 +255,7 @@ export function openDialog(mission, { onClose } = {}) {
 
     btn.addEventListener('pointerdown', e => { if (e.button) return; e.preventDefault(); btn.setPointerCapture?.(e.pointerId); begin(); });
     btn.addEventListener('pointerup', end);
+    btn.addEventListener('click', () => { if (current?.live) { muted = !muted; syncLive(); addGame(`🎤 ${t(muted ? 'handsFreePaused' : 'handsFreeOn')}`); } });
     btn.addEventListener('pointercancel', cancel);
     btn.addEventListener('contextmenu', e => e.preventDefault());     // a long press on a phone
     btn.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); begin(); } if (e.key === 'Escape') cancel(); });
@@ -219,6 +265,7 @@ export function openDialog(mission, { onClose } = {}) {
 }
 
 export function closeDialog(silent = false) {
+  current?.live?.cancel();
   if (!current) return;
   const c = current;
   current = null;

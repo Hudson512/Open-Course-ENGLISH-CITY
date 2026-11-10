@@ -59,7 +59,7 @@ Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `
 | 🌆 **Mundo aberto** | Cada cidade tem o seu mapa: estradas, trânsito (os carros travam… mas cuidado ao atravessar!), um parque, 13–14 locais onde podes entrar, peões com personalidade, ciclo dia/noite, minimapa e seta de GPS. |
 | 🤖 **NPCs de IA** | Em cada cidade, uma personagem em cada local (padeira, barbeiro, bancário, recrutadora…) + 8 peões, a falar o inglês de lá: *line* e *apartment* na Maple City, *queue* e *flat* em Londres. A IA adapta a linguagem ao teu nível (A1→C2), mantém a personagem e **age no mundo** (vende, cobra, aluga, contrata) através de ações validadas pelo jogo. |
 | 🧑‍🏫 **Coach invisível** | Cada frase tua recebe nota 0–100, versão corrigida/natural, dicas na tua língua, palavras novas (vão para o caderno) e sugestões de resposta. Tradução automática nos níveis A1/A2. |
-| 🎤 **Voz** | Os NPCs falam e podes responder ao microfone (Chrome/Edge). Com uma chave da [Deepgram](https://deepgram.com) as personagens ganham vozes naturais com o sotaque da cidade; sem ela usa-se o text-to-speech do browser. |
+| 🎤 **Voz** | Os NPCs falam e tu respondes ao microfone: mantém 🎤 premido para falar e solta para enviar, como uma mensagem de voz, para poderes parar para pensar. Com uma chave da [Deepgram](https://deepgram.com) as personagens ganham vozes naturais com o sotaque da cidade, a tua fala é percebida em qualquer browser, e há um modo **mãos-livres** opcional que percebe quando acabaste de falar (espera mais pelos principiantes). Sem chave usam-se as ferramentas de voz do browser (Chrome/Edge). |
 | ❤️ **Sobrevivência** | Fome, energia, social e saúde descem com o tempo. Come, dorme, conversa. Se desmaias pagas o hospital; 3 desmaios = voltas para casa (fim de jogo). Renda cobrada automaticamente — sem dinheiro, és despejado. |
 | ⭐ **História** | Táxi → alojamento → número de telefone → conta bancária → **entrevista de emprego na tua área** → turnos de trabalho diários com salário. Londres acrescenta arranjar um cartão Oyster na estação de metro. |
 | 📅 **Missões diárias** | Geradas por dia: compras na padaria, no supermercado ou no café, almoço no diner ou no pub, um corte de cabelo específico, falar com peões, falar com jogadores reais. |
@@ -97,7 +97,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 **Grátis e privado:** instala o [Ollama](https://ollama.com), corre `ollama pull llama3.1` e escolhe `ollama` nas Definições. Modelos pequenos seguem pior as regras do JSON; recomenda-se ≥ 8B.
 
-**Vozes naturais (opcional):** acrescenta `DEEPGRAM_API_KEY=...` ao `.env` e as personagens falam com vozes [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) — americanas na Maple City, britânicas em Londres. A chave fica no servidor. Sem ela, usam-se as vozes do próprio browser.
+**Vozes naturais e melhor escuta (opcional):** acrescenta `DEEPGRAM_API_KEY=...` ao `.env`. As personagens passam a falar com vozes [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) — americanas na Maple City, britânicas em Londres — e o teu microfone é transcrito pelo [Deepgram Flux](https://developers.deepgram.com/docs/flux/quickstart), que também permite a conversa mãos-livres (⚙️ Definições). O áudio passa pelo servidor do jogo, por isso a chave nunca chega ao browser. Sem ela, usam-se as vozes e o reconhecimento de voz do próprio browser.
 
 ### Jogar com amigos (LAN / mesma rede)
 
@@ -118,6 +118,7 @@ client/            Vite + Phaser 3 (mundo) + DOM (HUD, diálogos, menus)
   src/scenes/      WorldScene: mapa, física, peões, trânsito, câmaras, GPS
   src/ui/          hud, dialog (conversa com IA), panels, screens
   src/state.js     estado, sobrevivência, aplicar ações, XP, vocabulário, save (localStorage)
+  src/flux.js      microfone → servidor → Deepgram Flux; speech.js: vozes e a alternativa do browser
 server/            Node + Express + ws
   index.js         API: /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
   packs.js         compila as cidades de packs/ quando o servidor arranca
@@ -126,6 +127,8 @@ server/            Node + Express + ws
   llm.js           cliente multi-provedor + parsing robusto de JSON
   mock.js          NPC offline por regras
   multiplayer.js   presença, posições, chat de proximidade
+  tts.js           vozes das personagens com Deepgram Aura-2 (opcional)
+  stt.js           encaminha o microfone para o Deepgram Flux, speech-to-text (opcional)
 shared/            usado por cliente E servidor
   engine.js        as regras: missões, validação de ações, efeitos, gerador diário
   pack.js          ler uma cidade: modelos de texto e condições

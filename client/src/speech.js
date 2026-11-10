@@ -9,12 +9,10 @@ const cityLang = () => getPack()?.language || 'en-US';
 const slowFor = level => ({ A1: 0.8, A2: 0.88, B1: 0.95 }[level] || 1);   // beginners hear it slower
 
 // ── Voices from the server ──────────────────────────────────────
-let serverVoices = null;                     // null = not asked yet
-const hasServerVoices = async () => {
-  if (serverVoices === null) serverVoices = await api.config().then(c => Boolean(c.voices), () => false);
-  return serverVoices;
-};
-hasServerVoices();
+const serverConfig = api.config().catch(() => ({}));   // asked once: what the server can do
+const hasServerVoices = async () => Boolean((await serverConfig).voices);
+// Can the server listen to the microphone (Deepgram Flux, see flux.js)?
+export const serverListens = async () => Boolean((await serverConfig).listening);
 
 const clips = new Map();                     // line already heard → its audio, so 🔊 replays for free
 const MAX_CLIPS = 40;
@@ -35,7 +33,9 @@ async function speakFromServer(text, { gender, deepgram, name, rate, level }, mi
   }
   player = new Audio(url);
   player.playbackRate = Math.min(1.3, Math.max(0.7, rate * slowFor(level)));
-  await player.play();
+  const audio = player;
+  await audio.play();
+  await new Promise(done => { audio.onended = audio.onerror = audio.onpause = done; });   // until it ends or is stopped
 }
 
 // ── Voices from the browser ─────────────────────────────────────
@@ -47,7 +47,7 @@ const FEMALE = /female|samantha|zira|aria|jenny|susan|karen|victoria|allison|ava
 const MALE = /male|david|mark|guy|alex|fred|daniel|matthew|joey|justin|tom|aaron|christopher|ryan|george|oliver|arthur|thomas/i;
 
 function speakFromBrowser(text, { gender, rate, level }) {
-  if (!window.speechSynthesis) return;
+  if (!window.speechSynthesis) return null;
   const u = new SpeechSynthesisUtterance(text);
   const lang = cityLang();
   u.lang = lang;
@@ -57,9 +57,11 @@ function speakFromBrowser(text, { gender, rate, level }) {
   const re = gender === 'male' ? MALE : FEMALE;
   u.voice = pool.find(v => re.test(v.name) && !(gender === 'male' ? FEMALE : MALE).test(v.name)) || pool[0] || null;
   window.speechSynthesis.speak(u);
+  return new Promise(done => { u.onend = u.onerror = done; });
 }
 
 // `voice` is the character's voice block from the pack ({ gender, rate, deepgram }) plus its name.
+// The promise resolves when the line has been spoken (or was stopped).
 export async function speak(text, { gender = 'female', rate = 1, level = 'B1', deepgram, name = '' } = {}) {
   text = String(text || '').replace(/[*_#]/g, '').trim();
   if (!text) return;
@@ -70,7 +72,7 @@ export async function speak(text, { gender = 'female', rate = 1, level = 'B1', d
     try { if (mine === turn) await speakFromServer(text, voice, mine); return; }
     catch (e) { if (e.name === 'AbortError' || mine !== turn) return; }   // stopped on purpose
   }
-  if (mine === turn) speakFromBrowser(text, voice);
+  if (mine === turn) await speakFromBrowser(text, voice);
 }
 
 export function stopSpeaking() {
