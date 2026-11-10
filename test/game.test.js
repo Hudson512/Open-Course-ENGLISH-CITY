@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseModelJSON, normalizeTurn, resolveSettings } from '../server/llm.js';
 import { buildMessages, buildSystemPrompt } from '../server/prompts.js';
 import { mockTurn } from '../server/mock.js';
-import { validateAction, generateDaily, blocked, findItem } from '../shared/engine.js';
+import { validateAction, generateDaily, blocked, findItem, usedVocabulary } from '../shared/engine.js';
 import { levelFor } from '../shared/data.js';
 import { createApp } from '../server/index.js';
 import { memoryStore } from '../server/db.js';
@@ -114,6 +114,23 @@ test('a client-chosen base URL never receives the server keys', () => {
   // the provider's own URL typed explicitly still uses the server key
   const same = resolveSettings({ provider: 'anthropic', baseUrl: 'https://api.anthropic.com/' }, env);
   assert.deepEqual([same.apiKey, same.baseUrl], ['server-secret', 'https://api.anthropic.com']);
+});
+
+test('vocabulary counts whole words only', () => {
+  const used = (text, list) => usedVocabulary(text, list);
+  assert.deepEqual(used('Yes, please.', ['lease', 'rent']), []);
+  assert.deepEqual(used('Which one is cheaper?', ['chips', 'cheap']), []);
+  assert.deepEqual(used('I would like to sign the lease today', ['lease', 'tenant']), ['lease']);
+  assert.deepEqual(used('How much is a loaf of bread?', ['How much is…?', 'a loaf of', 'receipt']), ['How much is…?', 'a loaf of']);
+  assert.deepEqual(used('I’d like a LARGE one, to go.', ["I'd like…", 'small / medium / large', 'to go']), ["I'd like…", 'small / medium / large', 'to go']);
+  assert.deepEqual(used('Could you do it for 30 pounds?', ['Could you do it for…?', 'ASAP']), ['Could you do it for…?']);
+  assert.deepEqual(used('ok', ['ok', 'OK?']), []);
+});
+
+test('mock coach does not take English words for Portuguese', () => {
+  const said = text => mockTurn({ pack, mission: { templateId: 'visit', params: { place: 'phone_store' } }, state: {}, history: [{ role: 'player', text }] }).feedback;
+  assert.ok(said('Hello, I would like a prepaid SIM card, please.').score > 50);
+  assert.equal(said('Olá, eu quero um cartão, por favor.').score, 15);
 });
 
 test('helpers', () => {

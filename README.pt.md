@@ -9,7 +9,7 @@
 
 **Aprende inglês a vivê-lo: um jogo de mundo aberto (estilo GTA clássico, visto de cima) em que cada personagem é uma IA com quem tens de falar.**
 
-Aterras em Maple City, nos EUA, com uma mala e $600. Regateias com o taxista, arrendas um quarto, arranjas um telefone, abres uma conta bancária, passas numa entrevista de emprego — tudo em inglês, com um coach invisível a corrigir cada frase. Grátis, open source, e corre na tua máquina com a **tua própria API key** (ou sem chave nenhuma).
+Aterras numa cidade onde toda a gente fala inglês — **Maple City** 🇺🇸 com $600 ou **Londres** 🇬🇧 com £500 — só com uma mala. Regateias com o taxista, arrendas um quarto, arranjas um telefone, abres uma conta bancária, passas numa entrevista de emprego — tudo em inglês, com um coach invisível a corrigir cada frase. Grátis, open source, e corre na tua máquina com a **tua própria API key** (ou sem chave nenhuma).
 
 ![Diálogo com o taxista](docs/screenshot-dialog.png)
 
@@ -18,7 +18,8 @@ Aterras em Maple City, nos EUA, com uma mala e $600. Regateias com o taxista, ar
 - **As apps de línguas ensinam frases; a vida pede conversas.** Aqui praticas as que contam quando te mudas para fora: preços, renda, papelada, conversa de circunstância, entrevistas.
 - **A IA faz de personagem, o jogo guarda as regras.** Os NPCs vendem, cobram, arrendam e contratam, mas cada acção é validada pelo jogo, por isso o modelo não pode oferecer dinheiro nem saltar etapas.
 - **Sem dependência de fornecedor, sem subscrição.** Claude, OpenAI, Gemini, Groq, OpenRouter, um modelo local no Ollama, ou um modo offline por regras.
-- **Pequeno o suficiente para se perceber numa tarde.** Cerca de 3 200 linhas de JavaScript simples e três dependências de produção.
+- **As cidades são ficheiros de texto, não código.** Uma cidade é uma pasta de YAML: mapa, locais, personagens, preços, missões. [Acrescenta uma farmácia em dez minutos](docs/creating-a-city.pt.md), ou escreve a tua própria cidade.
+- **Pequeno o suficiente para se perceber numa tarde.** Cerca de 3 500 linhas de JavaScript simples e cinco dependências de produção.
 
 ## 🚀 Experimenta num minuto
 
@@ -53,18 +54,19 @@ Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `
 
 | | |
 |---|---|
-| ✈️ **Partida** | Crias a personagem (nome, cidade natal, língua materna, profissão) e escolhes o destino no painel de partidas do aeroporto. Por agora só 🇺🇸 EUA está ativo (UK, Canadá, Austrália, França, Espanha marcados "em breve"). |
-| 🚕 **Chegada** | Aterras em Maple City e tens de **negociar o táxi** com o Tony e escolher entre o **Hotel Sunrise** ($110/noite) ou o **Oak Street Apartments** ($180/semana). |
-| 🌆 **Mundo aberto** | Cidade com estradas, trânsito (os carros travam… mas cuidado ao atravessar!), parque, 13 locais com porta, peões com personalidade, ciclo dia/noite, minimapa e seta GPS. |
-| 🤖 **NPCs de IA** | 13 personagens fixas (padeira, barbeiro, empregada do diner, bancária, recrutador…) + 8 peões. A IA adapta a linguagem ao teu nível (A1→C2), mantém a personagem e **age no mundo** (vende, cobra, aluga, contrata) através de ações validadas pelo jogo. |
+| ✈️ **Partida** | Crias a personagem (nome, cidade natal, língua materna, profissão) e escolhes um voo no painel de partidas do aeroporto: 🇺🇸 **Maple City** (inglês americano) ou 🇬🇧 **Londres** (inglês britânico). Toronto, Sydney, Paris e Madrid estão marcados "em breve". |
+| 🚕 **Chegada** | Negoceias o táxi e escolhes onde morar: na Maple City, o **Hotel Sunrise** ($110/noite) ou os **Oak Street Apartments** ($180/semana); em Londres, um táxi preto até ao **Wanderers Hostel** (£35/noite) ou ao **Albion Road Flatshare** (£160/semana). |
+| 🌆 **Mundo aberto** | Cada cidade tem o seu mapa: estradas, trânsito (os carros travam… mas cuidado ao atravessar!), um parque, 13–14 locais onde podes entrar, peões com personalidade, ciclo dia/noite, minimapa e seta de GPS. |
+| 🤖 **NPCs de IA** | Em cada cidade, uma personagem em cada local (padeira, barbeiro, bancário, recrutadora…) + 8 peões, a falar o inglês de lá: *line* e *apartment* na Maple City, *queue* e *flat* em Londres. A IA adapta a linguagem ao teu nível (A1→C2), mantém a personagem e **age no mundo** (vende, cobra, aluga, contrata) através de ações validadas pelo jogo. |
 | 🧑‍🏫 **Coach invisível** | Cada frase tua recebe nota 0–100, versão corrigida/natural, dicas na tua língua, palavras novas (vão para o caderno) e sugestões de resposta. Tradução automática nos níveis A1/A2. |
 | 🎤 **Voz** | Os NPCs falam (text-to-speech do browser) e podes responder ao microfone (Chrome/Edge). |
 | ❤️ **Sobrevivência** | Fome, energia, social e saúde descem com o tempo. Come, dorme, conversa. Se desmaias pagas o hospital; 3 desmaios = voltas para casa (fim de jogo). Renda cobrada automaticamente — sem dinheiro, és despejado. |
-| ⭐ **História** | Táxi → alojamento → número de telefone → conta bancária → **entrevista de emprego na tua área** → turnos de trabalho diários com salário. |
-| 📅 **Missões diárias** | Geradas por dia: compras na padaria/mercado/café, almoço no diner com gorjeta, corte de cabelo específico, falar com peões, falar com jogadores reais. |
+| ⭐ **História** | Táxi → alojamento → número de telefone → conta bancária → **entrevista de emprego na tua área** → turnos de trabalho diários com salário. Londres acrescenta arranjar um cartão Oyster na estação de metro. |
+| 📅 **Missões diárias** | Geradas por dia: compras na padaria, no supermercado ou no café, almoço no diner ou no pub, um corte de cabelo específico, falar com peões, falar com jogadores reais. |
 | 👥 **Multiplayer** | Vês os outros jogadores na cidade, com nível CEFR, e falas com quem está perto (chat de proximidade + balões). Opcional: a IA corrige o teu inglês no chat. |
 | 📒 **Caderno** | Vocabulário recolhido automaticamente + flashcards com repetição espaçada simples. |
 | 🔌 **Qualquer IA** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local e grátis)**, qualquer servidor compatível com OpenAI (LM Studio, vLLM…) ou **modo offline** sem IA para testar. |
+| 🧩 **City packs** | Cada cidade é uma pasta de ficheiros YAML que o jogo verifica e compila ao arrancar. Novos locais, personagens, missões e cidades inteiras não precisam de programação: vê o [guia](docs/creating-a-city.pt.md). |
 
 ![Multiplayer](docs/screenshot-multiplayer.png)
 
@@ -115,17 +117,21 @@ client/            Vite + Phaser 3 (mundo) + DOM (HUD, diálogos, menus)
   src/ui/          hud, dialog (conversa com IA), panels, screens
   src/state.js     estado, sobrevivência, aplicar ações, XP, vocabulário, save (localStorage)
 server/            Node + Express + ws
-  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  index.js         API: /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  packs.js         compila as cidades de packs/ quando o servidor arranca
   db.js            saves dos jogadores em Postgres (opcional, via DATABASE_URL)
   prompts.js       constrói o prompt do NPC (personagem, cena, nível, regras, formato)
   llm.js           cliente multi-provedor + parsing robusto de JSON
   mock.js          NPC offline por regras
   multiplayer.js   presença, posições, chat de proximidade
 shared/            usado por cliente E servidor
-  world.js         mapa (estradas, edifícios, portas)
-  npcs.js          personagens
-  missions.js      missões, contrato de ações, validação, gerador diário
-  data.js          catálogos/preços, níveis CEFR, profissões
+  engine.js        as regras: missões, validação de ações, efeitos, gerador diário
+  pack.js          ler uma cidade: modelos de texto e condições
+  data.js          igual em todas as cidades: níveis CEFR, profissões
+packs/             as cidades, uma pasta de YAML cada
+  maple-city/      cidade, mapa, locais, pessoas, ações, missões
+  london/
+tools/pack/        o verificador/compilador de city packs (npm run pack)
 ```
 
 **Como um NPC "age":** o modelo devolve sempre JSON:
@@ -136,7 +142,7 @@ shared/            usado por cliente E servidor
   "suggestions": ["To go, please."], "translation": "..." }
 ```
 
-O jogo **valida** cada ação (`shared/missions.js → validateAction`): só ações permitidas na cena, preços dentro do catálogo (±30%), regateio do táxi entre $35 e $100, conta bancária só com morada e telefone, contratação só com nível A2 + requisitos. Pagamentos recusados voltam ao NPC como `[GAME: Payment DECLINED…]` para ele reagir.
+O jogo **valida** cada ação (`shared/engine.js → validateAction`) contra o `actions.yaml` da cidade: só ações permitidas na cena, preços dentro da tabela do local (±30%), regateio do táxi dentro dos limites da cidade ($35–$100 na Maple City), conta bancária só com morada e telefone, contratação só com nível A2 + requisitos. Pagamentos recusados voltam ao NPC como `[GAME: Payment DECLINED…]` para ele reagir.
 
 ## 🤝 Contribuir
 
@@ -147,30 +153,31 @@ O projecto é jovem e há espaço para todo o tipo de contribuição — **não 
 | Se gostas de… | Podes… | Onde |
 |---|---|---|
 | 🌍 Línguas | Traduzir a interface para francês, espanhol ou a tua língua | `client/src/i18n.js` |
-| ✍️ Escrita | Criar uma personagem nova, com personalidade e maneira de falar | `shared/npcs.js` |
-| 🎯 Ensino | Desenhar uma missão à volta de uma situação real (farmácia, correios, chamada do senhorio…) | `TEMPLATES` em `shared/missions.js` |
-| 🏙️ Criar mundos | Acrescentar um local à cidade, com a sua loja e os seus preços | `shared/world.js`, `shared/data.js` |
+| ✍️ Escrita | Criar uma personagem nova, com personalidade e maneira de falar | `packs/<cidade>/places.yaml`, `people.yaml` |
+| 🎯 Ensino | Desenhar uma missão à volta de uma situação real (farmácia, correios, chamada do senhorio…) | `packs/<cidade>/missions.yaml` |
+| 🏙️ Criar mundos | Acrescentar um local a uma cidade, ou escrever uma cidade nova (Toronto? Sydney? Lagos?) | `packs/` — [guia](docs/creating-a-city.pt.md) |
 | 🎨 Pixel art | Desenhar sprites e tiles CC0 para substituir as formas coloridas | `client/src/scenes/WorldScene.js` |
 | 🧠 Ciência da aprendizagem | Trocar os flashcards simples por repetição espaçada a sério (SM-2) | `client/src/ui/panels.js` |
 | 🤖 Prompts | Tornar os NPCs mais naturais ou mais fiáveis com modelos locais pequenos | `server/prompts.js`, `server/mock.js` |
 | 📱 Front-end | Acrescentar um joystick virtual para telemóvel | `client/src/` |
 
-Acrescentar conteúdo é sobretudo dados, não trabalho de motor:
+Acrescentar conteúdo é escrever ficheiros de texto, não trabalho de motor. O **[guia para criar locais, missões e cidades](docs/creating-a-city.pt.md)** explica passo a passo:
 
-- **Novo local:** acrescenta em `shared/world.js` (`LOCATIONS`), o NPC em `shared/npcs.js`, o mapeamento em `LOCATION_NPC` e, se vender coisas, o catálogo em `shared/data.js`.
-- **Nova missão:** cria um template em `TEMPLATES` (`shared/missions.js`) com `objective` (instruções ao NPC), `goal` (texto para o jogador em pt/en), `actions`, `vocab`, `reward` e `isComplete`. Junta-o ao `generateDaily` ou à `STORY`.
-- **Novo país/língua:** os textos de NPC e prompts estão separados por destino-alvo — o próximo passo é parametrizar `CITY`, catálogos e personas por `destination`.
+- **Novo local:** um bloco em `packs/<cidade>/places.yaml` — o edifício, quem lá trabalha, a tabela de preços.
+- **Nova missão:** um bloco em `packs/<cidade>/missions.yaml` — o que o jogador tem de fazer (`goal`), o que a IA sabe (`brief`), o que ela pode fazer (`allow`) e quando está concluída (`complete`).
+- **Nova cidade:** copia uma pasta em `packs/`, muda o mapa, os locais e a história. `npm run pack` diz-te por palavras simples o que está mal. Todos os campos estão na [especificação](docs/city-pack-spec.md).
 
 ### Fluxo de desenvolvimento
 
 ```bash
 npm run dev    # servidor com reload + Vite em http://localhost:5173
 npm test       # testes (parsing, validação, prompts, mock)
+npm run pack   # verifica os city packs e diz o que corrigir
 ```
 
 1. Faz fork do repositório e cria um branch para a tua alteração.
 2. Corre `npm run dev`. O modo mock deixa-te trabalhar sem gastar créditos de API.
-3. Corre `npm test` antes de abrir o pull request.
+3. Corre `npm test` (e `npm run pack` se mexeste numa cidade) antes de abrir o pull request.
 4. Abre um PR e descreve o que mudou. Um screenshot ajuda em tudo o que seja visual.
 
 Não sabes por onde começar, ou tens uma ideia? [Abre uma issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — perguntas e sugestões são bem-vindas, em inglês, português ou francês.
@@ -180,10 +187,11 @@ Não sabes por onde começar, ou tens uma ideia? [Abre uma issue](https://github
 - [ ] Interiores dos edifícios e sprites/tiles em pixel-art (CC0)
 - [ ] Missões multijogador cooperativas (ex.: um jogador pede direções, o outro explica) e "jobs" partilhados
 - [ ] Teste de colocação (placement) inicial com a IA
-- [ ] Mais destinos: 🇬🇧 Londres, 🇨🇦 Toronto, 🇦🇺 Sydney, e outras línguas (🇫🇷 🇪🇸)
+- [ ] Mais cidades: 🇨🇦 Toronto, 🇦🇺 Sydney… e outras línguas (🇫🇷 🇪🇸)
 - [ ] Transportes públicos, carro próprio, contas (luz, telefone), compras online
 - [ ] Repetição espaçada a sério (SM-2) e relatórios de progresso
 - [x] Docker e saves no servidor (Postgres)
+- [x] City packs: cidades escritas em YAML, com 🇺🇸 Maple City e 🇬🇧 Londres
 - [ ] Contas opcionais e mundo partilhado persistente
 - [ ] Modo mobile (joystick virtual)
 

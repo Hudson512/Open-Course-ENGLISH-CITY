@@ -9,7 +9,7 @@
 
 **Learn English by actually living it: an open-world game (classic top-down GTA style) where every character is an AI you have to talk to.**
 
-You land in Maple City, USA, with a suitcase and $600. Haggle with the taxi driver, rent a room, get a phone, open a bank account, pass a job interview — all in English, with a hidden coach correcting every sentence. Free, open source, and it runs on your own machine with **your own API key** (or with no key at all).
+You land in a city where everyone speaks English — **Maple City** 🇺🇸 with $600 or **London** 🇬🇧 with £500 — carrying a suitcase. Haggle with the taxi driver, rent a room, get a phone, open a bank account, pass a job interview — all in English, with a hidden coach correcting every sentence. Free, open source, and it runs on your own machine with **your own API key** (or with no key at all).
 
 ![Dialogue with the taxi driver](docs/screenshot-dialog.png)
 
@@ -18,7 +18,8 @@ You land in Maple City, USA, with a suitcase and $600. Haggle with the taxi driv
 - **Language apps teach sentences; life needs conversations.** Here you practise the ones that matter when you move abroad: prices, rent, paperwork, small talk, interviews.
 - **The AI plays the character, the game keeps the rules.** NPCs can sell, charge, rent and hire, but every action is validated by the game, so the model cannot hand out money or skip steps.
 - **No lock-in, no subscription.** Claude, OpenAI, Gemini, Groq, OpenRouter, a local Ollama model, or an offline rule-based mode.
-- **Small enough to understand in an afternoon.** About 3,200 lines of plain JavaScript and three runtime dependencies.
+- **Cities are text files, not code.** A city is a folder of YAML: map, places, characters, prices, missions. [Add a pharmacy in ten minutes](docs/creating-a-city.md), or write your own city.
+- **Small enough to understand in an afternoon.** About 3,500 lines of plain JavaScript and five runtime dependencies.
 
 ## 🚀 Try it in one minute
 
@@ -53,18 +54,19 @@ Without Docker the game keeps progress in the browser only, unless you set `DATA
 
 | | |
 |---|---|
-| ✈️ **Departure** | Create your character (name, home city, native language, profession) and pick a destination on the airport departures board. For now only 🇺🇸 USA is active (UK, Canada, Australia, France, Spain are marked "coming soon"). |
-| 🚕 **Arrival** | You land in Maple City and have to **negotiate the taxi** with Tony and choose between **Hotel Sunrise** ($110/night) and **Oak Street Apartments** ($180/week). |
-| 🌆 **Open world** | A city with roads, traffic (cars brake… but be careful crossing!), a park, 13 places you can enter, pedestrians with personality, a day/night cycle, a minimap and a GPS arrow. |
-| 🤖 **AI NPCs** | 13 fixed characters (baker, barber, diner waitress, bank teller, recruiter…) + 8 pedestrians. The AI adapts its language to your level (A1→C2), stays in character and **acts in the world** (sells, charges, rents, hires) through actions validated by the game. |
+| ✈️ **Departure** | Create your character (name, home city, native language, profession) and pick a flight on the airport departures board: 🇺🇸 **Maple City** (US English) or 🇬🇧 **London** (British English). Toronto, Sydney, Paris and Madrid are marked "coming soon". |
+| 🚕 **Arrival** | Negotiate the taxi and choose where to live: in Maple City, **Hotel Sunrise** ($110/night) or **Oak Street Apartments** ($180/week); in London, a black cab to **Wanderers Hostel** (£35/night) or the **Albion Road Flatshare** (£160/week). |
+| 🌆 **Open world** | Each city has its own map: roads, traffic (cars brake… but be careful crossing!), a park, 13–14 places you can enter, pedestrians with personality, a day/night cycle, a minimap and a GPS arrow. |
+| 🤖 **AI NPCs** | In each city, a character in every place (baker, barber, bank teller, recruiter…) + 8 pedestrians, speaking the local English: *line* and *apartment* in Maple City, *queue* and *flat* in London. The AI adapts its language to your level (A1→C2), stays in character and **acts in the world** (sells, charges, rents, hires) through actions validated by the game. |
 | 🧑‍🏫 **Invisible coach** | Every sentence you write gets a 0–100 score, a corrected/natural version, tips in your language, new words (saved to your notebook) and reply suggestions. Automatic translation at levels A1/A2. |
 | 🎤 **Voice** | NPCs speak (browser text-to-speech) and you can answer with your microphone (Chrome/Edge). |
 | ❤️ **Survival** | Hunger, energy, social and health drop over time. Eat, sleep, talk. If you faint you pay the hospital; 3 faints = you go back home (game over). Rent is charged automatically — with no money, you get evicted. |
-| ⭐ **Story** | Taxi → housing → phone number → bank account → **job interview in your field** → daily work shifts with a salary. |
-| 📅 **Daily missions** | Generated per day: shopping at the bakery/grocery/café, lunch at the diner with a tip, a specific haircut, talking to pedestrians, talking to real players. |
+| ⭐ **Story** | Taxi → housing → phone number → bank account → **job interview in your field** → daily work shifts with a salary. London adds getting an Oyster card at the Tube station. |
+| 📅 **Daily missions** | Generated per day: shopping at the bakery, the supermarket or the café, lunch at the diner or the pub, a specific haircut, talking to pedestrians, talking to real players. |
 | 👥 **Multiplayer** | See other players in the city, with their CEFR level, and talk to whoever is nearby (proximity chat + speech bubbles). Optional: the AI corrects your English in chat. |
 | 📒 **Notebook** | Vocabulary collected automatically + flashcards with simple spaced repetition. |
 | 🔌 **Any AI** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local and free)**, any OpenAI-compatible server (LM Studio, vLLM…) or an **offline mode** with no AI for testing. |
+| 🧩 **City packs** | Every city is a folder of YAML files that the game checks and compiles when it starts. New places, characters, missions and whole cities need no programming: see the [guide](docs/creating-a-city.md). |
 
 ![Multiplayer](docs/screenshot-multiplayer.png)
 
@@ -115,17 +117,21 @@ client/            Vite + Phaser 3 (world) + DOM (HUD, dialogues, menus)
   src/ui/          hud, dialog (AI conversation), panels, screens
   src/state.js     state, survival, applying actions, XP, vocabulary, save (localStorage)
 server/            Node + Express + ws
-  index.js         API: /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  index.js         API: /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
+  packs.js         compiles the cities in packs/ when the server starts
   db.js            player saves in Postgres (optional, via DATABASE_URL)
   prompts.js       builds the NPC prompt (character, scene, level, rules, format)
   llm.js           multi-provider client + robust JSON parsing
   mock.js          rule-based offline NPC
   multiplayer.js   presence, positions, proximity chat
 shared/            used by client AND server
-  world.js         map (roads, buildings, doors)
-  npcs.js          characters
-  missions.js      missions, action contract, validation, daily generator
-  data.js          catalogs/prices, CEFR levels, professions
+  engine.js        the rules: missions, validating actions, effects, daily generator
+  pack.js          reading a city: text templates and conditions
+  data.js          the same in every city: CEFR levels, professions
+packs/             the cities, one folder of YAML each
+  maple-city/      city, map, places, people, actions, missions
+  london/
+tools/pack/        the checker/compiler for city packs (npm run pack)
 ```
 
 **How an NPC "acts":** the model always returns JSON:
@@ -136,7 +142,7 @@ shared/            used by client AND server
   "suggestions": ["To go, please."], "translation": "..." }
 ```
 
-The game **validates** every action (`shared/missions.js → validateAction`): only actions allowed in the scene, prices within the catalog (±30%), taxi haggling between $35 and $100, a bank account only with an address and a phone, hiring only at level A2 + requirements. Declined payments go back to the NPC as `[GAME: Payment DECLINED…]` so it can react.
+The game **validates** every action (`shared/engine.js → validateAction`) against the city's `actions.yaml`: only actions allowed in the scene, prices within the place's list (±30%), taxi haggling within the city's limits ($35–$100 in Maple City), a bank account only with an address and a phone, hiring only at level A2 + requirements. Declined payments go back to the NPC as `[GAME: Payment DECLINED…]` so it can react.
 
 ## 🤝 Contributing
 
@@ -147,30 +153,31 @@ This project is young and there is room for every kind of contribution — **you
 | If you like… | You could… | Where |
 |---|---|---|
 | 🌍 Languages | Translate the interface into French, Spanish or your own language | `client/src/i18n.js` |
-| ✍️ Writing | Create a new character with a personality and a way of speaking | `shared/npcs.js` |
-| 🎯 Teaching | Design a mission around a real-life situation (pharmacy, post office, landlord call…) | `TEMPLATES` in `shared/missions.js` |
-| 🏙️ World building | Add a new place to the city with its own shop and prices | `shared/world.js`, `shared/data.js` |
+| ✍️ Writing | Create a new character with a personality and a way of speaking | `packs/<city>/places.yaml`, `people.yaml` |
+| 🎯 Teaching | Design a mission around a real-life situation (pharmacy, post office, landlord call…) | `packs/<city>/missions.yaml` |
+| 🏙️ World building | Add a place to a city, or write a whole new city (Toronto? Sydney? Lagos?) | `packs/` — [guide](docs/creating-a-city.md) |
 | 🎨 Pixel art | Draw CC0 sprites and tiles to replace the coloured shapes | `client/src/scenes/WorldScene.js` |
 | 🧠 Learning science | Replace the simple flashcards with real spaced repetition (SM-2) | `client/src/ui/panels.js` |
 | 🤖 Prompting | Make NPCs more natural or more reliable with small local models | `server/prompts.js`, `server/mock.js` |
 | 📱 Front-end | Add a virtual joystick for mobile | `client/src/` |
 
-Adding content is mostly data, not engine work:
+Adding content is writing text files, not engine work. The **[guide to creating places, missions and cities](docs/creating-a-city.md)** walks through it step by step:
 
-- **New place:** add it to `shared/world.js` (`LOCATIONS`), the NPC to `shared/npcs.js`, the mapping to `LOCATION_NPC` and, if it sells things, the catalog to `shared/data.js`.
-- **New mission:** create a template in `TEMPLATES` (`shared/missions.js`) with `objective` (instructions for the NPC), `goal` (text for the player in pt/en), `actions`, `vocab`, `reward` and `isComplete`. Add it to `generateDaily` or to `STORY`.
-- **New country/language:** NPC texts and prompts are separated by target destination — the next step is to parameterize `CITY`, catalogs and personas by `destination`.
+- **New place:** one block in `packs/<city>/places.yaml` — the building, who works there, the price list.
+- **New mission:** one block in `packs/<city>/missions.yaml` — what the player must do (`goal`), what the AI knows (`brief`), what it may do (`allow`) and when it is done (`complete`).
+- **New city:** copy a folder in `packs/`, change the map, the places and the story. `npm run pack` tells you in plain words what is wrong. Every field is in the [specification](docs/city-pack-spec.md).
 
 ### Development workflow
 
 ```bash
 npm run dev    # server with reload + Vite at http://localhost:5173
 npm test       # tests (parsing, validation, prompts, mock)
+npm run pack   # checks the city packs and says what to fix
 ```
 
 1. Fork the repository and create a branch for your change.
 2. Run `npm run dev`. Mock mode lets you work without spending any API credits.
-3. Run `npm test` before opening the pull request.
+3. Run `npm test` (and `npm run pack` if you touched a city) before opening the pull request.
 4. Open a PR and describe what changed. A screenshot helps for anything visual.
 
 Not sure where to start, or have an idea? [Open an issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — questions and suggestions are welcome, in English, Portuguese or French.
@@ -180,10 +187,11 @@ Not sure where to start, or have an idea? [Open an issue](https://github.com/Hud
 - [ ] Building interiors and pixel-art sprites/tiles (CC0)
 - [ ] Cooperative multiplayer missions (e.g. one player asks for directions, the other explains) and shared "jobs"
 - [ ] Initial placement test with the AI
-- [ ] More destinations: 🇬🇧 London, 🇨🇦 Toronto, 🇦🇺 Sydney, and other languages (🇫🇷 🇪🇸)
+- [ ] More cities: 🇨🇦 Toronto, 🇦🇺 Sydney… and other languages (🇫🇷 🇪🇸)
 - [ ] Public transport, your own car, bills (electricity, phone), online shopping
 - [ ] Proper spaced repetition (SM-2) and progress reports
 - [x] Docker setup and server-side saves (Postgres)
+- [x] City packs: cities written in YAML, with 🇺🇸 Maple City and 🇬🇧 London
 - [ ] Optional accounts and a persistent shared world
 - [ ] Mobile mode (virtual joystick)
 

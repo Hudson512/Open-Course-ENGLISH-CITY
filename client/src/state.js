@@ -1,6 +1,6 @@
 // Game state, persistence, survival simulation and application of NPC actions.
 import { levelFor } from '../../shared/data.js';
-import { viewMission, blocked, isComplete as missionComplete, validateAction, applyEffects, generateDaily, round2 } from '../../shared/engine.js';
+import { viewMission, blocked, isComplete as missionComplete, validateAction, applyEffects, generateDaily, round2, usedVocabulary } from '../../shared/engine.js';
 import { getPack, fmtMoney, placeById, placePoint } from './pack.js';
 import { t, tr } from './i18n.js';
 
@@ -201,11 +201,7 @@ export function addWords(words = [], source = '') {
 }
 
 export function markUsedVocab(text, vocab = []) {
-  const lower = text.toLowerCase();
-  const used = vocab.filter(v => {
-    const k = v.toLowerCase().replace(/…|\.\.\./g, '').replace(/[?!]/g, '').trim();
-    return k.length > 2 && lower.includes(k);
-  });
+  const used = usedVocabulary(text, vocab);
   for (const u of used) {
     const v = state.vocab[u] || (state.vocab[u] = { meaning: '', seen: 0, box: 0, day: state.time.day, source: 'mission' });
     v.used = (v.used || 0) + 1;

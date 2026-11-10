@@ -4,6 +4,21 @@
 import { check, renderMission } from './pack.js';
 
 export const round2 = n => Math.round(n * 100) / 100;
+
+// Which entries of a vocabulary list the player really used in a message.
+// Whole words only: "please" does not count as "lease", "which" does not count as "chips".
+// "I'd like…" matches the words before the dots; "regular / large" matches either word.
+export function usedVocabulary(text, vocabulary = []) {
+  const clean = s => String(s).toLowerCase().replace(/[’‘]/g, "'");
+  const said = clean(text);
+  const has = phrase => {
+    const k = phrase.replace(/…|\.\.\./g, ' ').replace(/[?!.,;:"]/g, ' ').trim().replace(/\s+/g, ' ');
+    if (k.length < 3) return false;
+    const words = k.split(' ').map(w => w.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&')).join('[\\s,]+');
+    return new RegExp(`(?<![\\p{L}\\p{N}])${words}(?![\\p{L}\\p{N}])`, 'u').test(said);
+  };
+  return vocabulary.filter(v => clean(v).split(' / ').some(has));
+}
 const num = (v, d) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : d);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 

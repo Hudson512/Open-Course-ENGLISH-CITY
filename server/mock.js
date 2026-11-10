@@ -39,7 +39,7 @@ export function mockTurn({ pack, mission, state, history = [] }) {
     else if (!P) { reply = 'Got it. Hop in!'; go(); }
     else if (offer == null) reply = `${pack.places[dest]?.name || 'Sure'}, got it. That's ${$(P.start)}. Deal?`;
     else if (offer < P.min) reply = `${$(offer)}? No way! Tell you what, I can do ${$(P.min + 10)}.`;
-    else { reply = `OK, ${$(offer)}, deal! Put your luggage in the trunk. Hop in!`; go(offer); }
+    else { reply = `OK, ${$(offer)}, deal! Put your bags in the back. Hop in!`; go(offer); }
     if (P && /^(yes|ok|deal|sure|fine)/.test(lastLower) && !actions.length && (dest || !by.choose)) {
       reply = 'Great! Hop in!';
       go(P.start);
@@ -131,7 +131,7 @@ function parseItems(place, kind, type, text) {
 function heuristicFeedback(text) {
   const words = text.trim().split(/\s+/).filter(Boolean);
   let score = Math.min(90, 40 + words.length * 6);
-  const nonEnglish = /\b(eu|quero|obrigad|por favor|você|não|sim|quanto|custa)\b/i.test(text);
+  const nonEnglish = /\b(eu|quero|obrigad[oa]|por favor|você|não|quanto custa)\b/i.test(text);
   if (nonEnglish) score = 15;
   let corrected = text.trim();
   if (corrected) corrected = corrected[0].toUpperCase() + corrected.slice(1);
