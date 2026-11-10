@@ -135,7 +135,9 @@ const item = obj({
   price: [num, 'what it costs'], food: num, energy: num, health: num, consume: oneOf('now'),
   effects: list(effect), customer_sets_price: pair
 });
-const voice = obj({ gender: oneOf('male', 'female'), rate: num });
+const deepgramVoice = (v, p, E) => (typeof v === 'string' && /^aura-2-[a-z]+-[a-z]{2}$/.test(v) ? null
+  : E(p, 'expected a Deepgram Aura-2 voice such as "aura-2-draco-en" (list: developers.deepgram.com/docs/tts-models)'));
+const voice = obj({ gender: oneOf('male', 'female'), rate: num, deepgram: deepgramVoice });
 const briefPart = (v, p, E) => (typeof v === 'string' ? str(v, p, E)
   : obj({ when: [cond, 'the condition that picks the sentence'], text: [str, 'the sentence when it is true'], else: str })(v, p, E));
 const brief = (v, p, E) => (Array.isArray(v) ? list(briefPart)(v, p, E) : str(v, p, E));

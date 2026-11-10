@@ -59,7 +59,7 @@ Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `
 | 🌆 **Mundo aberto** | Cada cidade tem o seu mapa: estradas, trânsito (os carros travam… mas cuidado ao atravessar!), um parque, 13–14 locais onde podes entrar, peões com personalidade, ciclo dia/noite, minimapa e seta de GPS. |
 | 🤖 **NPCs de IA** | Em cada cidade, uma personagem em cada local (padeira, barbeiro, bancário, recrutadora…) + 8 peões, a falar o inglês de lá: *line* e *apartment* na Maple City, *queue* e *flat* em Londres. A IA adapta a linguagem ao teu nível (A1→C2), mantém a personagem e **age no mundo** (vende, cobra, aluga, contrata) através de ações validadas pelo jogo. |
 | 🧑‍🏫 **Coach invisível** | Cada frase tua recebe nota 0–100, versão corrigida/natural, dicas na tua língua, palavras novas (vão para o caderno) e sugestões de resposta. Tradução automática nos níveis A1/A2. |
-| 🎤 **Voz** | Os NPCs falam (text-to-speech do browser) e podes responder ao microfone (Chrome/Edge). |
+| 🎤 **Voz** | Os NPCs falam e podes responder ao microfone (Chrome/Edge). Com uma chave da [Deepgram](https://deepgram.com) as personagens ganham vozes naturais com o sotaque da cidade; sem ela usa-se o text-to-speech do browser. |
 | ❤️ **Sobrevivência** | Fome, energia, social e saúde descem com o tempo. Come, dorme, conversa. Se desmaias pagas o hospital; 3 desmaios = voltas para casa (fim de jogo). Renda cobrada automaticamente — sem dinheiro, és despejado. |
 | ⭐ **História** | Táxi → alojamento → número de telefone → conta bancária → **entrevista de emprego na tua área** → turnos de trabalho diários com salário. Londres acrescenta arranjar um cartão Oyster na estação de metro. |
 | 📅 **Missões diárias** | Geradas por dia: compras na padaria, no supermercado ou no café, almoço no diner ou no pub, um corte de cabelo específico, falar com peões, falar com jogadores reais. |
@@ -96,6 +96,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 \* Os nomes de modelos mudam com frequência: podes sempre escolher outro em `LLM_MODEL` ou nas Definições. Para custos baixos usa modelos "mini/flash/haiku"; cada fala de NPC é uma chamada curta (~1–2k tokens).
 
 **Grátis e privado:** instala o [Ollama](https://ollama.com), corre `ollama pull llama3.1` e escolhe `ollama` nas Definições. Modelos pequenos seguem pior as regras do JSON; recomenda-se ≥ 8B.
+
+**Vozes naturais (opcional):** acrescenta `DEEPGRAM_API_KEY=...` ao `.env` e as personagens falam com vozes [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) — americanas na Maple City, britânicas em Londres. A chave fica no servidor. Sem ela, usam-se as vozes do próprio browser.
 
 ### Jogar com amigos (LAN / mesma rede)
 

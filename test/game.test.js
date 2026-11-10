@@ -8,6 +8,8 @@ import { levelFor } from '../shared/data.js';
 import { createApp } from '../server/index.js';
 import { memoryStore } from '../server/db.js';
 import { compilePack } from '../tools/pack/compile.js';
+import { pickVoice, deepgramVoices } from '../server/tts.js';
+import { Readable } from 'node:stream';
 
 // The rules are tested on the city that ships with the game.
 const pack = compilePack(new URL('../packs/maple-city', import.meta.url).pathname);
@@ -131,6 +133,51 @@ test('mock coach does not take English words for Portuguese', () => {
   const said = text => mockTurn({ pack, mission: { templateId: 'visit', params: { place: 'phone_store' } }, state: {}, history: [{ role: 'player', text }] }).feedback;
   assert.ok(said('Hello, I would like a prepaid SIM card, please.').score > 50);
   assert.equal(said('Olá, eu quero um cartão, por favor.').score, 15);
+});
+
+test('voices: each character gets a voice with the accent of its city', () => {
+  const us = pickVoice({ language: 'en-US', gender: 'male', name: 'Tony' });
+  assert.match(us, /^aura-2-[a-z]+-en$/);
+  assert.equal(pickVoice({ language: 'en-US', gender: 'male', name: 'Tony' }), us);          // always the same
+  assert.notEqual(pickVoice({ language: 'en-US', gender: 'male', name: 'Marcus' }), us);
+  assert.equal(pickVoice({ language: 'en-GB', gender: 'male', name: 'Terry' }), 'aura-2-draco-en');
+  assert.equal(pickVoice({ language: 'en-GB', gender: 'female', name: 'Maggie' }), 'aura-2-pandora-en');
+  assert.equal(pickVoice({ language: 'en-GB', gender: 'female', model: 'aura-2-theia-en' }), 'aura-2-theia-en');
+  assert.equal(pickVoice({ language: 'en-GB', gender: 'female', model: '../../v1/projects' }), 'aura-2-pandora-en');
+  assert.match(pickVoice({ language: 'xx-XX' }), /^aura-2-[a-z]+-en$/);
+  assert.equal(deepgramVoices(''), null);
+});
+
+test('voices: the server speaks a line with Deepgram, or says it has no voices', async () => {
+  const asked = [];
+  const voices = deepgramVoices('test-key', async (url, init) => {
+    asked.push({ url, auth: init.headers.authorization, body: JSON.parse(init.body) });
+    return new Response('MP3DATA', { status: 200, headers: { 'content-type': 'audio/mpeg' } });
+  });
+  const london = compilePack(new URL('../packs/london', import.meta.url).pathname);
+  const say = (server, body) => fetch(`http://127.0.0.1:${server.address().port}/api/tts`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+
+  const on = createApp({ packs: { london }, voices }).listen(0);
+  try {
+    assert.equal((await (await fetch(`http://127.0.0.1:${on.address().port}/api/config`)).json()).voices, true);
+    const res = await say(on, { pack: 'london', text: '**Hop in**, then!', voice: { gender: 'male' }, name: 'Terry' });
+    assert.deepEqual([res.status, res.headers.get('content-type'), res.headers.get('x-voice'), await res.text()], [200, 'audio/mpeg', 'aura-2-draco-en', 'MP3DATA']);
+    assert.deepEqual(asked[0], { url: 'https://api.deepgram.com/v1/speak?model=aura-2-draco-en', auth: 'Token test-key', body: { text: 'Hop in, then!' } });
+    const sophie = london.places.hostel.character;
+    assert.equal((await say(on, { pack: 'london', text: 'Hi!', voice: sophie.voice, name: sophie.name })).headers.get('x-voice'), 'aura-2-theia-en');
+    assert.equal((await say(on, { pack: 'london', text: '  ' })).status, 400);
+    assert.equal((await say(on, { pack: 'london', text: 'a'.repeat(701) })).status, 413);
+    assert.equal(asked.length, 2);
+  } finally { on.close(); }
+
+  const failing = createApp({ packs: { london }, voices: { speak: async () => ({ ok: false, status: 429, stream: null }) } }).listen(0);
+  try { assert.equal((await say(failing, { pack: 'london', text: 'Hi!' })).status, 502); } finally { failing.close(); }
+
+  const off = createApp({ packs: { london }, voices: null }).listen(0);
+  try {
+    assert.equal((await say(off, { pack: 'london', text: 'Hi!' })).status, 503);
+    assert.equal((await (await fetch(`http://127.0.0.1:${off.address().port}/api/config`)).json()).voices, false);
+  } finally { off.close(); }
 });
 
 test('helpers', () => {

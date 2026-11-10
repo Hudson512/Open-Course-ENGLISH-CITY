@@ -12,7 +12,7 @@ export const dialogOpen = () => !!current;
 // Who the player is talking to: the place's character, or the pedestrian they stopped.
 export function npcMeta(mission) {
   const c = S.missionInfo(mission).character || {};
-  return { name: c.name || 'Staff', emoji: c.emoji || '🙂', role: c.role || 'Local', voice: c.voice || {} };
+  return { name: c.name || 'Staff', emoji: c.emoji || '🙂', role: c.role || 'Local', voice: { ...c.voice, name: c.name || '' } };
 }
 
 export function openDialog(mission, { onClose } = {}) {

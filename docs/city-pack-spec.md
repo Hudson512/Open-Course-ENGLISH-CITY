@@ -129,7 +129,7 @@ bakery:
   character:
     name: Rosa
     emoji: 👩‍🍳
-    voice: { gender: female, rate: 1.0 }
+    voice: { gender: female, rate: 1.0 }   # optional: deepgram: aura-2-thalia-en (a specific Deepgram voice)
     role: Owner of Sweet Crumbs Bakery
     persona: >
       Rosa Martinez, 45, warm and chatty Mexican-American baker. Proud of her

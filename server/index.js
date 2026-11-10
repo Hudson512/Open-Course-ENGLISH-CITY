@@ -11,6 +11,7 @@ import { attachMultiplayer } from './multiplayer.js';
 import { viewMission } from '../shared/engine.js';
 import { loadPacks, packSummary } from './packs.js';
 import { postgresStore, validId, validToken } from './db.js';
+import { deepgramVoices, pickVoice, MAX_TTS_CHARS } from './tts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8787);
@@ -18,7 +19,8 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 // `store` (see db.js) enables server-side saves; without it the game is localStorage-only.
 // `packs` are the compiled cities (see packs.js), by id.
-export function createApp({ store = null, packs = loadPacks() } = {}) {
+// `voices` (see tts.js) gives characters a Deepgram voice; without it the browser's voices are used.
+export function createApp({ store = null, packs = loadPacks(), voices = deepgramVoices() } = {}) {
   const app = express();
   app.use(express.json({ limit: '200kb' }));
 
@@ -30,6 +32,7 @@ export function createApp({ store = null, packs = loadPacks() } = {}) {
       serverModel: process.env.LLM_MODEL || p.model,
       serverHasKey: Boolean((p.envKey && process.env[p.envKey]) || process.env.LLM_API_KEY || p.noKey || p.kind === 'mock'),
       persistence: Boolean(store),
+      voices: Boolean(voices),
       allowClientKeys: String(process.env.ALLOW_CLIENT_KEYS ?? 'true') !== 'false',
       presets: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, { model: v.model, models: v.models || [], baseUrl: v.baseUrl || '', needsKey: !v.noKey && v.kind !== 'mock' }]))
     });
@@ -67,6 +70,26 @@ export function createApp({ store = null, packs = loadPacks() } = {}) {
     } catch (e) {
       console.error('[npc/turn]', e.message);
       res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  // A character's line as audio (MP3). The voice comes from the pack, or from the city's accent.
+  app.post('/api/tts', async (req, res) => {
+    if (!voices) return res.status(503).json({ error: 'voices disabled' });
+    const { pack: packId, text, voice = {}, name } = req.body || {};
+    const line = String(text || '').replace(/[*_#]/g, '').trim();
+    if (!line) return res.status(400).json({ error: 'nothing to say' });
+    if (line.length > MAX_TTS_CHARS) return res.status(413).json({ error: 'text too long' });
+    const pack = Object.hasOwn(packs, String(packId)) ? packs[packId] : null;
+    try {
+      const model = pickVoice({ language: pack?.language, gender: voice.gender, name, model: voice.deepgram });
+      const out = await voices.speak(line, model);
+      if (!out.ok || !out.stream) return res.status(502).json({ error: `voice service answered ${out.status}` });
+      res.set({ 'content-type': out.type, 'cache-control': 'no-store', 'x-voice': model });
+      out.stream.on('error', () => res.destroy()).pipe(res);
+    } catch (e) {
+      console.error('[tts]', e.message);
+      res.status(502).json({ error: 'voice service unreachable' });
     }
   });
 
@@ -142,13 +165,15 @@ export function createApp({ store = null, packs = loadPacks() } = {}) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const store = process.env.DATABASE_URL ? await postgresStore(process.env.DATABASE_URL) : null;
   const packs = loadPacks();
-  const server = http.createServer(createApp({ store, packs }));
+  const voices = deepgramVoices();
+  const server = http.createServer(createApp({ store, packs, voices }));
   attachMultiplayer(server);
   server.listen(PORT, HOST, () => {
     const provider = process.env.LLM_PROVIDER || 'mock';
     console.log(`\n🗽  OpenCourse English City running → http://localhost:${PORT}`);
     console.log(`    LLM provider (server default): ${provider}${provider === 'mock' ? ' (offline — add a key in .env or in the game Settings)' : ''}`);
     console.log(`    Cities: ${Object.values(packs).map(p => p.name).join(', ') || 'none (check packs/)'}`);
+    console.log(`    Voices: ${voices ? 'Deepgram Aura-2' : 'browser voices (set DEEPGRAM_API_KEY for natural ones)'}`);
     console.log(`    Saves: ${store ? 'Postgres (server-side)' : 'browser only (set DATABASE_URL to persist on the server)'}`);
     console.log(`    Friends on your network can join at http://<your-ip>:${PORT}\n`);
   });

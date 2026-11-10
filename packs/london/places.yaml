@@ -69,7 +69,7 @@ hostel:
     id: receptionist
     name: "Sophie"
     emoji: 🛎️
-    voice: { gender: female, rate: 1.05 }
+    voice: { gender: female, rate: 1.05, deepgram: aura-2-theia-en }   # an Australian voice
     role: "Receptionist at Wanderers Hostel"
     persona: >
       Sophie Bennett, 24, friendly Australian-born receptionist who has lived in London for

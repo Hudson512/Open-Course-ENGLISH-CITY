@@ -85,6 +85,9 @@ pharmacy:                                  # o id: minúsculas, sem espaços, ú
 
 - `door` é o lado do edifício onde fica a porta (`top`, `bottom`, `left`, `right`). Aponta-a para uma rua.
 - `persona` é o que a IA lê para fazer de personagem: idade, feitio, maneira de falar, o que pergunta sempre.
+- `voice` é como a personagem soa: `gender`, `rate` (1 = velocidade normal) e, se quiseres uma
+  [voz Deepgram](https://developers.deepgram.com/docs/tts-models) em particular, `deepgram: aura-2-draco-en`. Sem isso, o
+  jogo escolhe uma voz com o sotaque da cidade.
 - `sells` é a tabela de preços. A IA só pode vender o que está aqui, mais ou menos a este preço (±30%).
   `food`, `energy` e `health` são o que o artigo dá ao jogador; `consume: now` quer dizer que é consumido
   na hora em vez de ir para o inventário.

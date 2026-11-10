@@ -55,6 +55,12 @@ test('pack: London compiles, with its own map, money, ids and flags', () => {
   assert.match(moveIn.brief, /£160 per week/);
 });
 
+test('compiler: a character voice must be a real Deepgram voice name', () => {
+  const { sources } = readPack(path.join(dir, '..', 'london'));
+  sources.places.hostel.character.voice.deepgram = 'robot';
+  assert.throws(() => compileSources(sources), e => e instanceof PackError && /places\.yaml › hostel › character › voice › deepgram: expected a Deepgram Aura-2 voice/.test(e.message));
+});
+
 test('packs: every city in packs/ is loaded for the departures board', () => {
   const all = loadPacks();
   assert.deepEqual(Object.keys(all), ['london', 'maple-city']);

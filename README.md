@@ -59,7 +59,7 @@ Without Docker the game keeps progress in the browser only, unless you set `DATA
 | 🌆 **Open world** | Each city has its own map: roads, traffic (cars brake… but be careful crossing!), a park, 13–14 places you can enter, pedestrians with personality, a day/night cycle, a minimap and a GPS arrow. |
 | 🤖 **AI NPCs** | In each city, a character in every place (baker, barber, bank teller, recruiter…) + 8 pedestrians, speaking the local English: *line* and *apartment* in Maple City, *queue* and *flat* in London. The AI adapts its language to your level (A1→C2), stays in character and **acts in the world** (sells, charges, rents, hires) through actions validated by the game. |
 | 🧑‍🏫 **Invisible coach** | Every sentence you write gets a 0–100 score, a corrected/natural version, tips in your language, new words (saved to your notebook) and reply suggestions. Automatic translation at levels A1/A2. |
-| 🎤 **Voice** | NPCs speak (browser text-to-speech) and you can answer with your microphone (Chrome/Edge). |
+| 🎤 **Voice** | NPCs speak and you can answer with your microphone (Chrome/Edge). With a [Deepgram](https://deepgram.com) key the characters get natural voices with the accent of their city; without one the browser's text-to-speech is used. |
 | ❤️ **Survival** | Hunger, energy, social and health drop over time. Eat, sleep, talk. If you faint you pay the hospital; 3 faints = you go back home (game over). Rent is charged automatically — with no money, you get evicted. |
 | ⭐ **Story** | Taxi → housing → phone number → bank account → **job interview in your field** → daily work shifts with a salary. London adds getting an Oyster card at the Tube station. |
 | 📅 **Daily missions** | Generated per day: shopping at the bakery, the supermarket or the café, lunch at the diner or the pub, a specific haircut, talking to pedestrians, talking to real players. |
@@ -96,6 +96,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 \* Model names change often: you can always choose another one in `LLM_MODEL` or in Settings. For low costs use "mini/flash/haiku" models; each NPC line is one short call (~1–2k tokens).
 
 **Free and private:** install [Ollama](https://ollama.com), run `ollama pull llama3.1` and choose `ollama` in Settings. Small models follow the JSON rules less reliably; ≥ 8B is recommended.
+
+**Natural voices (optional):** add `DEEPGRAM_API_KEY=...` to `.env` and the characters speak with [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) voices — American in Maple City, British in London. The key stays on the server. Leave it out and the browser's own voices are used.
 
 ### Play with friends (LAN / same network)
 

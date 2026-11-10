@@ -34,7 +34,13 @@ export const api = {
   config: () => fetch('/api/config').then(r => r.json()),
   npcTurn: (mission, state, history) => post('/api/npc/turn', { pack: state.pack, mission, state: snapshot(state), history, settings: llmSettings() }),
   checkChat: (text, nativeLang) => post('/api/chat/check', { text, nativeLang, settings: llmSettings() }),
-  test: s => post('/api/llm/test', { settings: s })
+  test: s => post('/api/llm/test', { settings: s }),
+  // A character's line as audio, when the server has natural voices (config.voices)
+  async tts(text, voice, name, pack, signal) {
+    const res = await fetch('/api/tts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, voice, name, pack }), signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.blob();
+  }
 };
 
 // Only what the NPC needs to know

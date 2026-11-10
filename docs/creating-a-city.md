@@ -81,6 +81,9 @@ pharmacy:                                  # the id: lower case, no spaces, uniq
 
 - `door` is the side of the building the door is on (`top`, `bottom`, `left`, `right`). Point it at a street.
 - `persona` is what the AI reads to play the character: age, mood, how they talk, what they always ask.
+- `voice` is how they sound: `gender`, `rate` (1 = normal speed) and, if you want a particular
+  [Deepgram voice](https://developers.deepgram.com/docs/tts-models), `deepgram: aura-2-draco-en`. Without it the game
+  picks a voice with the city's accent.
 - `sells` is the price list. The AI can only sell what is here, at about this price (±30%).
   `food`, `energy` and `health` are what the item gives the player; `consume: now` means it is used on the
   spot instead of going to the inventory.

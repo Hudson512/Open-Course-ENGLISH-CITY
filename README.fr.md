@@ -59,7 +59,7 @@ Sans Docker, le jeu garde la progression uniquement dans le navigateur, sauf si 
 | 🌆 **Monde ouvert** | Chaque ville a sa propre carte : des routes, de la circulation (les voitures freinent… mais attention en traversant !), un parc, 13–14 lieux où entrer, des piétons avec leur personnalité, un cycle jour/nuit, une mini-carte et une flèche GPS. |
 | 🤖 **PNJ IA** | Dans chaque ville, un personnage par lieu (boulangère, barbier, conseiller bancaire, recruteuse…) + 8 piétons, qui parlent l'anglais du pays : *line* et *apartment* à Maple City, *queue* et *flat* à Londres. L'IA adapte son langage à votre niveau (A1→C2), reste dans son personnage et **agit dans le monde** (vend, encaisse, loue, embauche) par des actions validées par le jeu. |
 | 🧑‍🏫 **Coach invisible** | Chacune de vos phrases reçoit une note de 0 à 100, une version corrigée/naturelle, des conseils dans votre langue, des mots nouveaux (ajoutés au carnet) et des suggestions de réponse. Traduction automatique aux niveaux A1/A2. |
-| 🎤 **Voix** | Les PNJ parlent (synthèse vocale du navigateur) et vous pouvez répondre au micro (Chrome/Edge). |
+| 🎤 **Voix** | Les PNJ parlent et vous pouvez répondre au micro (Chrome/Edge). Avec une clé [Deepgram](https://deepgram.com), les personnages ont des voix naturelles avec l'accent de leur ville ; sans clé, c'est la synthèse vocale du navigateur. |
 | ❤️ **Survie** | La faim, l'énergie, le social et la santé baissent avec le temps. Mangez, dormez, discutez. Si vous vous évanouissez, vous payez l'hôpital ; 3 évanouissements = retour au pays (fin de partie). Le loyer est prélevé automatiquement — sans argent, vous êtes expulsé. |
 | ⭐ **Histoire** | Taxi → logement → numéro de téléphone → compte bancaire → **entretien d'embauche dans votre domaine** → journées de travail avec salaire. Londres ajoute l'achat d'une carte Oyster à la station de métro. |
 | 📅 **Missions quotidiennes** | Générées chaque jour : courses à la boulangerie, au supermarché ou au café, déjeuner au diner ou au pub, coupe de cheveux précise, parler aux piétons, parler à de vrais joueurs. |
@@ -96,6 +96,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 \* Les noms de modèles changent souvent : vous pouvez toujours en choisir un autre dans `LLM_MODEL` ou dans les Paramètres. Pour réduire les coûts, utilisez des modèles « mini/flash/haiku » ; chaque réplique de PNJ est un appel court (~1–2k tokens).
 
 **Gratuit et privé :** installez [Ollama](https://ollama.com), lancez `ollama pull llama3.1` et choisissez `ollama` dans les Paramètres. Les petits modèles respectent moins bien les règles du JSON ; ≥ 8B est recommandé.
+
+**Voix naturelles (facultatif) :** ajoutez `DEEPGRAM_API_KEY=...` à `.env` et les personnages parlent avec des voix [Deepgram Aura-2](https://developers.deepgram.com/docs/tts-models) — américaines à Maple City, britanniques à Londres. La clé reste sur le serveur. Sans elle, ce sont les voix du navigateur.
 
 ### Jouer avec des amis (LAN / même réseau)
 
