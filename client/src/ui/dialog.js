@@ -61,12 +61,21 @@ export function openDialog(mission, { onClose } = {}) {
   function addMsg(role, text, extra = {}) {
     const el = h('div', { class: `msg ${role}` },
       h('div', { class: 'bubble' }, text,
-        role === 'npc' && extra.translation ? h('button', { class: 'tr-btn', title: t('translate'), onclick: e => e.currentTarget.parentElement.querySelector('.tr')?.classList.toggle('hidden') }, '🌐') : null,
-        role === 'npc' ? h('button', { class: 'tr-btn', title: 'Play', onclick: () => speak(text, { ...meta.voice, level }) }, '🔊') : null,
-        role === 'npc' && extra.translation ? h('div', { class: `tr ${settings.autoTranslate && lowLevel ? '' : 'hidden'}` }, extra.translation) : null));
+        role === 'npc' ? h('button', { class: 'tr-btn', title: 'Play', onclick: () => speak(text, { ...meta.voice, level }) }, '🔊') : null));
+    if (role === 'npc') addTranslation(el, extra.translation);
     log.append(el);
     log.scrollTop = log.scrollHeight;
     return el;
+  }
+
+  // The translation can arrive after the line itself is already on screen.
+  function addTranslation(el, translation) {
+    if (!translation) return;
+    const bubble = el.querySelector('.bubble');
+    const tr = h('div', { class: `tr ${settings.autoTranslate && lowLevel ? '' : 'hidden'}` }, translation);
+    bubble.querySelector('.tr-btn').before(h('button', { class: 'tr-btn', title: t('translate'), onclick: () => tr.classList.toggle('hidden') }, '🌐'));
+    bubble.append(tr);
+    log.scrollTop = log.scrollHeight;
   }
 
   function addGame(text, kind = '') { log.append(h('div', { class: `msg game ${kind}` }, text)); log.scrollTop = log.scrollHeight; }
@@ -88,16 +97,24 @@ export function openDialog(mission, { onClose } = {}) {
     log.append(typing); log.scrollTop = log.scrollHeight;
     sendBtn.disabled = true;
     try {
-      const res = await api.npcTurn(current.mission, S.getState(), current.history);
+      // The character's line is shown and spoken as soon as it is known; the corrections,
+      // suggestions and actions follow when the whole answer has arrived.
+      const mine = current;
+      let bubble = null;
+      const showReply = reply => {
+        if (bubble || current !== mine || mine.panel !== panel) return;
+        typing.remove();
+        mine.history.push({ role: 'npc', text: reply });
+        bubble = addMsg('npc', reply);
+        if (getSettings().voice) {
+          speaking = true;                     // hands-free waits until the character has finished
+          speak(reply, { ...meta.voice, level: S.levelFor(S.getState().xp).id }).finally(() => { if (current === mine) { speaking = false; syncLive(); } });
+        }
+      };
+      const res = await api.npcTurn(current.mission, S.getState(), current.history, showReply);
       if (!current || current.panel !== panel) return;
-      typing.remove();
-      current.history.push({ role: 'npc', text: res.reply });
-      addMsg('npc', res.reply, res);
-      if (getSettings().voice) {
-        speaking = true;                       // hands-free waits until the character has finished
-        const mine = current;
-        speak(res.reply, { ...meta.voice, level: S.levelFor(S.getState().xp).id }).finally(() => { if (current === mine) { speaking = false; syncLive(); } });
-      }
+      showReply(res.reply);
+      addTranslation(bubble, res.translation);
 
       if (res.feedback && lastPlayerEl) {
         lastPlayerEl.append(feedbackBlock(res.feedback));

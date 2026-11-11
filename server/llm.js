@@ -69,6 +69,83 @@ async function openaiCompat({ system, messages, settings }) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+// ── Streaming ───────────────────────────────────────────────────
+// Same as chat(), but calls onText(textSoFar) while the answer is being written, so the game can
+// show and speak the character's line before the rest (corrections, suggestions) has arrived.
+// If the provider cannot stream, the answer simply arrives all at once.
+export async function chatStream({ system, messages, settings, maxTokens = 900, onText }) {
+  const anthropicApi = settings.kind === 'anthropic';
+  if (!anthropicApi && settings.kind !== 'openai') throw new Error('mock provider handled elsewhere');
+  const url = anthropicApi ? `${settings.baseUrl}/v1/messages` : `${settings.baseUrl}/chat/completions`;
+  const headers = { 'content-type': 'application/json' };
+  let body;
+  if (anthropicApi) {
+    Object.assign(headers, { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01' });
+    body = { model: settings.model, max_tokens: maxTokens, system, messages, stream: true };
+  } else {
+    if (settings.apiKey) headers.authorization = `Bearer ${settings.apiKey}`;
+    body = { model: settings.model, messages: [{ role: 'system', content: system }, ...messages], stream: true };
+    if (settings.json) body.response_format = { type: 'json_object' };
+  }
+  const post = () => fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: AbortSignal.timeout(90000) });
+  let res = await post();
+  if (!res.ok && body.response_format && res.status === 400) { delete body.response_format; res = await post(); }   // no JSON mode here
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw httpError(res.status, data?.error?.message || JSON.stringify(data));
+  }
+  // What each kind of API puts in one streamed event
+  const pick = anthropicApi
+    ? ev => (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta' ? ev.delta.text : '')
+    : ev => ev.choices?.[0]?.delta?.content || '';
+
+  if (!/text\/event-stream/i.test(res.headers.get('content-type') || '')) {   // answered in one piece
+    const data = await res.json().catch(() => ({}));
+    const text = anthropicApi ? (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('') : data.choices?.[0]?.message?.content || '';
+    onText?.(text);
+    return text;
+  }
+  let text = '', buffer = '';
+  const decoder = new TextDecoder();
+  for await (const chunk of res.body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+      let ev; try { ev = JSON.parse(payload); } catch { continue; }
+      if (ev.type === 'error' || ev.error) throw httpError(502, ev.error?.message || 'stream error');
+      const piece = pick(ev);
+      if (piece) { text += piece; onText?.(text); }
+    }
+  }
+  return text;
+}
+
+// The character's line inside an answer that is still being written:
+//   {"reply":"Two croissants, com   →  { text: 'Two croissants, com', done: false }
+// `done` turns true when the closing quote has arrived. null while "reply" has not started.
+export function partialReply(text) {
+  const m = /"reply"\s*:\s*"/.exec(String(text || ''));
+  if (!m) return null;
+  let out = '';
+  for (let i = m.index + m[0].length; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') return { text: out, done: true };
+    if (ch !== '\\') { out += ch; continue; }
+    const next = text[++i];
+    if (next === undefined) break;                       // the escape is still on its way
+    if (next === 'u') {
+      const hex = text.slice(i + 1, i + 5);
+      if (hex.length < 4) break;
+      out += String.fromCharCode(parseInt(hex, 16)); i += 4;
+    } else out += { n: '\n', t: '\t', r: '\r', b: '\b', f: '\f' }[next] ?? next;
+  }
+  return { text: out, done: false };
+}
+
 function httpError(status, msg) {
   const e = new Error(`LLM provider error (${status}): ${String(msg).slice(0, 300)}`);
   e.status = status === 401 || status === 403 ? 401 : 502;

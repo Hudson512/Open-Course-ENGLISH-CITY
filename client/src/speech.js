@@ -14,27 +14,22 @@ const hasServerVoices = async () => Boolean((await serverConfig).voices);
 // Can the server listen to the microphone (Deepgram Flux, see flux.js)?
 export const serverListens = async () => Boolean((await serverConfig).listening);
 
-const clips = new Map();                     // line already heard → its audio, so 🔊 replays for free
-const MAX_CLIPS = 40;
 let player = null;                           // the <audio> playing now
-let pending = null;                          // the request for the line about to play
 let turn = 0;                                // every speak()/stopSpeaking() starts a new turn
 
-async function speakFromServer(text, { gender, deepgram, name, rate, level }, mine) {
-  const key = [getPack()?.id, name, gender, deepgram, text].join('|');
-  let url = clips.get(key);
-  if (!url) {
-    pending = new AbortController();
-    const blob = await api.tts(text, { gender, deepgram }, name, getPack()?.id, pending.signal);
-    if (mine !== turn) return;               // the player moved on while it was loading
-    url = URL.createObjectURL(blob);
-    clips.set(key, url);
-    if (clips.size > MAX_CLIPS) { const [old, oldUrl] = clips.entries().next().value; clips.delete(old); URL.revokeObjectURL(oldUrl); }
-  }
-  player = new Audio(url);
-  player.playbackRate = Math.min(1.3, Math.max(0.7, rate * slowFor(level)));
-  const audio = player;
-  await audio.play();
+// The address of a line's audio. The browser starts playing as soon as the first sound arrives and
+// keeps the file, so the 🔊 button replays it without asking the server again.
+export function voiceUrl(text, { gender, deepgram, name }, pack = getPack()?.id) {
+  const q = new URLSearchParams({ pack: pack || '', name: name || '', gender: gender || 'female' });
+  if (deepgram) q.set('deepgram', deepgram);
+  q.set('text', text);
+  return `/api/tts?${q}`;
+}
+
+async function speakFromServer(text, voice) {
+  const audio = player = new Audio(voiceUrl(text, voice));
+  audio.playbackRate = Math.min(1.3, Math.max(0.7, voice.rate * slowFor(voice.level)));
+  await audio.play();                        // fails if the server cannot say it → the browser's voice takes over
   await new Promise(done => { audio.onended = audio.onerror = audio.onpause = done; });   // until it ends or is stopped
 }
 
@@ -69,7 +64,7 @@ export async function speak(text, { gender = 'female', rate = 1, level = 'B1', d
   const mine = turn;
   const voice = { gender, rate, level, deepgram, name };
   if (await hasServerVoices()) {
-    try { if (mine === turn) await speakFromServer(text, voice, mine); return; }
+    try { if (mine === turn) await speakFromServer(text, voice); return; }
     catch (e) { if (e.name === 'AbortError' || mine !== turn) return; }   // stopped on purpose
   }
   if (mine === turn) await speakFromBrowser(text, voice);
@@ -77,8 +72,7 @@ export async function speak(text, { gender = 'female', rate = 1, level = 'B1', d
 
 export function stopSpeaking() {
   turn++;
-  pending?.abort(); pending = null;
-  if (player) { player.pause(); player = null; }
+  if (player) { player.pause(); player.removeAttribute('src'); player.load?.(); player = null; }   // also stops the download
   window.speechSynthesis?.cancel();
 }
 

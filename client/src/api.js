@@ -32,15 +32,42 @@ async function post(url, body) {
 
 export const api = {
   config: () => fetch('/api/config').then(r => r.json()),
-  npcTurn: (mission, state, history) => post('/api/npc/turn', { pack: state.pack, mission, state: snapshot(state), history, settings: llmSettings() }),
+  // One turn of a character. `onReply(text)` is called as soon as the character's line is known,
+  // usually well before the rest (corrections, suggestions, actions) that the promise resolves with.
+  async npcTurn(mission, state, history, onReply) {
+    const res = await fetch('/api/npc/turn', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pack: state.pack, mission, state: snapshot(state), history, settings: llmSettings(), stream: true })
+    });
+    if (!/ndjson/.test(res.headers.get('content-type') || '') || !res.body) {      // an error, or everything at once
+      const data = await res.json().catch(() => ({ error: 'Invalid server response' }));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    }
+    let turn = null, buffer = '';
+    const read = line => {
+      if (!line.trim()) return;
+      const msg = JSON.parse(line);
+      if (msg.type === 'reply') onReply?.(msg.reply);
+      else if (msg.type === 'turn') turn = msg;
+      else if (msg.type === 'error') throw new Error(msg.error);
+    };
+    const reader = res.body.getReader(), decoder = new TextDecoder();
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      lines.forEach(read);
+    }
+    read(buffer);
+    if (!turn) throw new Error('Invalid server response');
+    return turn;
+  },
   checkChat: (text, nativeLang) => post('/api/chat/check', { text, nativeLang, settings: llmSettings() }),
-  test: s => post('/api/llm/test', { settings: s }),
-  // A character's line as audio, when the server has natural voices (config.voices)
-  async tts(text, voice, name, pack, signal) {
-    const res = await fetch('/api/tts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, voice, name, pack }), signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.blob();
-  }
+  test: s => post('/api/llm/test', { settings: s })
+
 };
 
 // Only what the NPC needs to know

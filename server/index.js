@@ -4,7 +4,7 @@ import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolveSettings, chat, parseModelJSON, normalizeTurn, PRESETS } from './llm.js';
+import { resolveSettings, chat, chatStream, partialReply, parseModelJSON, normalizeTurn, PRESETS } from './llm.js';
 import { buildSystemPrompt, buildMessages, buildCheckPrompt } from './prompts.js';
 import { mockTurn } from './mock.js';
 import { attachMultiplayer } from './multiplayer.js';
@@ -48,8 +48,17 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
     res.json(pack);
   });
 
-  // One NPC turn: reply + game actions + language feedback
+  // One NPC turn: reply + game actions + language feedback.
+  // With `stream: true` the answer comes as lines of JSON: first {"type":"reply"} with the character's
+  // line as soon as it is written (so it can be shown and spoken while the rest is still coming),
+  // then {"type":"turn"} with everything, or {"type":"error"}.
   app.post('/api/npc/turn', async (req, res) => {
+    const streaming = Boolean(req.body?.stream);
+    let started = false;
+    const line = obj => {
+      if (!started) { started = true; res.set({ 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store', 'x-accel-buffering': 'no' }); res.flushHeaders(); }
+      res.write(JSON.stringify(obj) + '\n');
+    };
     try {
       const { pack: packId, mission, state, history, settings: clientSettings } = req.body || {};
       const pack = Object.hasOwn(packs, String(packId)) ? packs[packId] : null;
@@ -63,22 +72,36 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
       } else {
         const system = buildSystemPrompt({ pack, mission, state });
         const messages = buildMessages(history);
-        const text = await chat({ system, messages, settings });
+        let early = false;                                // has the line been sent ahead already?
+        const onText = soFar => {
+          if (early) return;
+          const reply = partialReply(soFar);
+          if (reply?.done && reply.text.trim()) { early = true; line({ type: 'reply', reply: reply.text }); }
+        };
+        const text = streaming ? await chatStream({ system, messages, settings, onText }) : await chat({ system, messages, settings });
         turn = normalizeTurn(parseModelJSON(text), text);
       }
       turn.actions = (turn.actions || []).filter(a => view.allow.includes(a.type));
       turn.provider = settings.provider;
-      res.json(turn);
+      if (!streaming) return res.json(turn);
+      line({ type: 'turn', ...turn });
+      res.end();
     } catch (e) {
       console.error('[npc/turn]', e.message);
+      if (started) { line({ type: 'error', error: e.message }); return res.end(); }
       res.status(e.status || 500).json({ error: e.message });
     }
   });
 
   // A character's line as audio (MP3). The voice comes from the pack, or from the city's accent.
-  app.post('/api/tts', async (req, res) => {
+  // GET (…/api/tts?pack=london&name=Terry&gender=male&text=…) lets the browser play the audio while
+  // it is still arriving and keep it for the replay button; POST takes the same things as JSON.
+  app.all('/api/tts', async (req, res) => {
+    if (!['GET', 'POST'].includes(req.method)) return res.status(405).end();
     if (!voices) return res.status(503).json({ error: 'voices disabled' });
-    const { pack: packId, text, voice = {}, name } = req.body || {};
+    const q = req.query;
+    const { pack: packId, text, voice = {}, name } = req.method === 'GET'
+      ? { pack: q.pack, text: q.text, name: q.name, voice: { gender: q.gender, deepgram: q.deepgram } } : req.body || {};
     const line = String(text || '').replace(/[*_#]/g, '').trim();
     if (!line) return res.status(400).json({ error: 'nothing to say' });
     if (line.length > MAX_TTS_CHARS) return res.status(413).json({ error: 'text too long' });
@@ -87,7 +110,7 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
       const model = pickVoice({ language: pack?.language, gender: voice.gender, name, model: voice.deepgram });
       const out = await voices.speak(line, model);
       if (!out.ok || !out.stream) return res.status(502).json({ error: `voice service answered ${out.status}` });
-      res.set({ 'content-type': out.type, 'cache-control': 'no-store', 'x-voice': model });
+      res.set({ 'content-type': out.type, 'cache-control': req.method === 'GET' ? 'private, max-age=86400' : 'no-store', 'x-voice': model, 'x-accel-buffering': 'no' });
       out.stream.on('error', () => res.destroy()).pipe(res);
     } catch (e) {
       console.error('[tts]', e.message);
