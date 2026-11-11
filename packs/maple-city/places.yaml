@@ -266,7 +266,7 @@ offices:
   name: "Downtown Offices"
   short: "Offices"
   icon: 🏙️
-  building: { at: [92, 22], size: [15, 20], door: left, color: "#636e72", roof: "#2d3436" }
+  building: { at: [92, 22], size: [15, 20], door: left, color: "#636e72", roof: "#2d3436", floors: 12 }
   character:
     id: manager
     name: "Sarah"

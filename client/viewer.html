@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City viewer — OpenCourse English City</title>
+  <meta name="description" content="See a city of OpenCourse English City as a map, in 3D, or walking through it in first person." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗺️</text></svg>" />
+</head>
+<body class="viewer">
+  <header class="vw-bar">
+    <a class="vw-back" href="./">← <span data-t="back"></span></a>
+    <select id="city" aria-label="City"></select>
+    <nav class="vw-tabs" role="tablist">
+      <button role="tab" data-mode="map">🗺️ <span data-t="map"></span></button>
+      <button role="tab" data-mode="city3d">🏙️ <span data-t="city3d"></span></button>
+      <button role="tab" data-mode="walk">🚶 <span data-t="walk"></span></button>
+    </nav>
+  </header>
+  <main id="stage">
+    <div id="map" class="vw-view"></div>
+    <div id="city3d" class="vw-view"></div>
+    <div id="walk" class="vw-view"><canvas id="walk-canvas"></canvas><div class="vw-cross">+</div><div id="facing" class="vw-facing"></div><canvas id="mini" class="vw-mini"></canvas></div>
+  </main>
+  <footer id="help" class="vw-help"></footer>
+  <script type="module" src="/src/viewer/main.js"></script>
+</body>
+</html>

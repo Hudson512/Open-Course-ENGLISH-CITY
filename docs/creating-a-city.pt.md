@@ -228,6 +228,12 @@ Os edifícios onde se pode entrar não estão aqui: cada um é a linha `building
 | Uma passagem tem de ser mais larga do que o jogador (um pouco mais de uma célula) | passagens mais estreitas parecem abertas, mas não são |
 | `spawn` e `taxi_stand` não ficam dentro de um edifício | o jogador começaria preso |
 
+**Vê-o em 3D.** Abre **http://localhost:8787/viewer.html?city=my-city** (ou 🗺️ no ecrã inicial do jogo).
+Mostra a mesma cidade de três maneiras: a imagem do mapa, uma cidade 3D que podes rodar, e a andar pelas
+ruas em primeira pessoa. O servidor lê as cidades quando arranca, por isso reinicia-o depois de uma
+alteração. A altura de um edifício vem do tamanho; para a escolheres, acrescenta `floors` ao `building:`
+(ou a uma entrada de `decor`): `building: { at: [94, 19], size: [13, 20], door: left, floors: 9 }`.
+
 **Tamanhos que resultam:** uma loja pequena tem cerca de 8 × 8 células, um supermercado 14 × 10, um
 aeroporto 14 × 24. Abaixo de 5 × 5 o nome não cabe no edifício (o verificador avisa). Um mapa de cerca de
 110 × 90 células atravessa-se a pé em dois minutos, o que está certo para uma cidade com uma dúzia de locais.

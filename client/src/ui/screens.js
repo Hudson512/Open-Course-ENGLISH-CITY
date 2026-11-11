@@ -17,6 +17,7 @@ export function titleScreen({ canContinue, onNew, onContinue, onSettings, notice
       canContinue ? h('button', { class: 'primary big', onclick: onContinue }, `▶ ${t('continue')}`) : null,
       h('button', { class: canContinue ? 'ghost big' : 'primary big', onclick: onNew }, `✈️ ${t('newGame')}`),
       h('button', { class: 'ghost', onclick: onSettings }, `⚙️ ${t('settings')}`),
+      h('a', { class: 'ghost button-link', href: 'viewer.html' }, `🗺️ ${t('viewCities')}`),
       notice ? h('div', { class: 'error' }, notice) : null),
     h('div', { class: 'title-foot' }, 'Open source · MIT · Bring your own API key · ', h('a', { href: 'https://github.com', target: '_blank' }, 'GitHub'))));
 }

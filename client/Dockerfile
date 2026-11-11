@@ -6,6 +6,8 @@ RUN npm ci
 COPY vite.config.js ./
 COPY client ./client
 COPY shared ./shared
+# the city viewer draws the map picture with the pack tools (tools/pack/preview.js)
+COPY tools ./tools
 RUN npm run build
 
 FROM nginx:1.29-alpine

@@ -67,6 +67,7 @@ Sans Docker, le jeu garde la progression uniquement dans le navigateur, sauf si 
 | 📒 **Carnet** | Vocabulaire collecté automatiquement + cartes mémoire avec répétition espacée simple. |
 | 🔌 **N'importe quelle IA** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100 % local et gratuit)**, tout serveur compatible OpenAI (LM Studio, vLLM…) ou un **mode hors ligne** sans IA pour tester. |
 | 🧩 **City packs** | Chaque ville est un dossier de fichiers YAML que le jeu vérifie et compile au démarrage. Nouveaux lieux, personnages, missions et villes entières sans programmation : voir le [guide](docs/creating-a-city.md) (en anglais). |
+| 🏙️ **Visionneuse de villes** | Voyez n'importe quelle ville en plan, en 3D à faire tourner (Three.js), ou parcourez ses rues à la première personne, façon Wolfenstein (ray casting) : 🗺️ sur l'écran d'accueil, ou `viewer.html?city=london`. Pratique pendant la création d'une ville. |
 
 ![Multijoueur](docs/screenshot-multiplayer.png)
 
@@ -119,6 +120,7 @@ client/            Vite + Phaser 3 (monde) + DOM (HUD, dialogues, menus)
   src/ui/          hud, dialog (conversation avec l'IA), panels, screens
   src/state.js     état, survie, application des actions, XP, vocabulaire, sauvegarde (localStorage)
   src/flux.js      micro → serveur → Deepgram Flux ; speech.js : voix et solution de repli du navigateur
+  src/viewer/      visionneuse de villes : 3D (Three.js) et première personne (ray casting)
 server/            Node + Express + ws
   index.js         API : /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
   packs.js         compile les villes de packs/ au démarrage du serveur
@@ -132,6 +134,7 @@ server/            Node + Express + ws
 shared/            utilisé par le client ET le serveur
   engine.js        les règles : missions, validation des actions, effets, générateur quotidien
   pack.js          lire une ville : modèles de texte et conditions
+  scene.js         une ville comme scène 3D, lue par toutes les vues
   data.js          identique dans toutes les villes : niveaux CECRL, professions
 packs/             les villes, un dossier de YAML chacune
   maple-city/      ville, carte, lieux, passants, actions, missions

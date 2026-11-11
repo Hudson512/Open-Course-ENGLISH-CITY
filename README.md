@@ -67,6 +67,7 @@ Without Docker the game keeps progress in the browser only, unless you set `DATA
 | 📒 **Notebook** | Vocabulary collected automatically + flashcards with simple spaced repetition. |
 | 🔌 **Any AI** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local and free)**, any OpenAI-compatible server (LM Studio, vLLM…) or an **offline mode** with no AI for testing. |
 | 🧩 **City packs** | Every city is a folder of YAML files that the game checks and compiles when it starts. New places, characters, missions and whole cities need no programming: see the [guide](docs/creating-a-city.md). |
+| 🏙️ **City viewer** | See any city as a map, as a 3D city you can turn around (Three.js), or walk its streets in first person, Wolfenstein-style (ray casting): 🗺️ on the title screen, or `viewer.html?city=london`. Handy while creating a city. |
 
 ![Multiplayer](docs/screenshot-multiplayer.png)
 
@@ -119,6 +120,7 @@ client/            Vite + Phaser 3 (world) + DOM (HUD, dialogues, menus)
   src/ui/          hud, dialog (AI conversation), panels, screens
   src/state.js     state, survival, applying actions, XP, vocabulary, save (localStorage)
   src/flux.js      microphone → server → Deepgram Flux; speech.js: voices and the browser fallback
+  src/viewer/      city viewer: 3D (Three.js) and first person (ray casting)
 server/            Node + Express + ws
   index.js         API: /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
   packs.js         compiles the cities in packs/ when the server starts
@@ -132,6 +134,7 @@ server/            Node + Express + ws
 shared/            used by client AND server
   engine.js        the rules: missions, validating actions, effects, daily generator
   pack.js          reading a city: text templates and conditions
+  scene.js         a city as a 3D scene, read by every view
   data.js          the same in every city: CEFR levels, professions
 packs/             the cities, one folder of YAML each
   maple-city/      city, map, places, people, actions, missions

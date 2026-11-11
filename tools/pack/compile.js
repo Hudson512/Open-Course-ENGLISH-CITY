@@ -75,6 +75,7 @@ const str = expect(v => typeof v === 'string' && v !== '', 'text');
 const num = expect(v => typeof v === 'number' && Number.isFinite(v), 'a number');
 const int = expect(Number.isInteger, 'a whole number');
 const bool = expect(v => typeof v === 'boolean', 'true or false');
+const floors = expect(v => Number.isInteger(v) && v >= 1 && v <= 40, 'a whole number of floors from 1 to 40 (how tall the building is in 3D)');
 const any = () => {};
 const oneOf = (...vals) => expect(v => vals.includes(v), `one of: ${vals.join(', ')}`);
 const pair = expect(v => Array.isArray(v) && v.length === 2 && v.every(n => typeof n === 'number'), 'two numbers like [10, 20]');
@@ -159,7 +160,7 @@ const SHAPES = {
     cell: [int, 'pixels per cell, e.g. 20'], size: [pair, '[columns, rows]'],
     roads: [list(obj({ row: num, col: num, width: [num, 'in cells'] })), 'at least one road'],
     park: obj({ name: [str, ''], at: [pair, ''], size: [pair, ''] }),
-    decor: list(obj({ at: [pair, ''], size: [pair, ''] })),
+    decor: list(obj({ at: [pair, ''], size: [pair, ''], floors })),
     spawn: [pair, 'where the player appears'], taxi_stand: pair
   }),
   places: mapOf(obj({
@@ -167,7 +168,7 @@ const SHAPES = {
     building: [obj({
       at: [pair, '[column, row] of the top-left corner'], size: [pair, '[columns, rows]'],
       door: [(v, p, E) => (Array.isArray(v) ? pair(v, p, E) : oneOf(...SIDES)(v, p, E)), 'the side facing the street: top, bottom, left or right'],
-      color, roof: color
+      color, roof: color, floors
     }), 'where it is on the map'],
     character: [obj({
       id: str, name: [str, 'first name shown in the game'], emoji: str, voice,
@@ -281,14 +282,14 @@ export function compileSources(src, id = src.city?.id || 'pack') {
     if (!roads.some(r => gap(door, r) <= 2 * C)) E(at, `the door (${Array.isArray(d) ? d.join(', ') : d} side) does not face a road. Pick the side next to a street, or move the building within 2 cells of one`);
     solids.push([`"${pid}"`, b, at, door]);
     const { building, ...rest } = p;
-    outPlaces[pid] = { id: pid, ...rest, ...b, door, color: building.color || '#b2bec3', roof: building.roof || '#636e72',
+    outPlaces[pid] = { id: pid, ...rest, ...b, door, color: building.color || '#b2bec3', roof: building.roof || '#636e72', ...(building.floors && { floors: building.floors }),
       character: { id: pid, ...p.character } };
     if (p.lodging && !(p.lodging.min <= p.lodging.price && p.lodging.price <= p.lodging.max)) E(['places.yaml', pid, 'lodging'], 'price must be between min and max');
     if (['name', 'short', 'icon', 'character', 'lodging', 'sells', 'services', 'vocabulary'].includes(pid)) E(['places.yaml', pid], 'this word is reserved, choose another id');
   }
   const park = m.park ? { id: 'park', name: m.park.name, ...rect(m.park) } : null;
   if (park) solids.push(['the park', park, ['map.yaml', 'park']]);
-  const decor = (m.decor || []).map((d, i) => { const r = rect(d); solids.push([`decor #${i + 1}`, r, ['map.yaml', 'decor', `#${i + 1}`]]); return r; });
+  const decor = (m.decor || []).map((d, i) => { const r = { ...rect(d), ...(d.floors && { floors: d.floors }) }; solids.push([`decor #${i + 1}`, r, ['map.yaml', 'decor', `#${i + 1}`]]); return r; });
   solids.forEach(([label, r, at, door], i) => {
     if (r.w <= 0 || r.h <= 0) return E(at, 'size must be bigger than zero');
     if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) E(at, `${label} is outside the map (${m.size[0]} × ${m.size[1]} cells)`);

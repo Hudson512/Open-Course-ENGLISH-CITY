@@ -67,6 +67,7 @@ Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `
 | 📒 **Caderno** | Vocabulário recolhido automaticamente + flashcards com repetição espaçada simples. |
 | 🔌 **Qualquer IA** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local e grátis)**, qualquer servidor compatível com OpenAI (LM Studio, vLLM…) ou **modo offline** sem IA para testar. |
 | 🧩 **City packs** | Cada cidade é uma pasta de ficheiros YAML que o jogo verifica e compila ao arrancar. Novos locais, personagens, missões e cidades inteiras não precisam de programação: vê o [guia](docs/creating-a-city.pt.md). |
+| 🏙️ **Visualizador de cidades** | Vê qualquer cidade como mapa, como cidade 3D que podes rodar (Three.js), ou anda pelas ruas em primeira pessoa, ao estilo Wolfenstein (ray casting): 🗺️ no ecrã inicial, ou `viewer.html?city=london`. Útil enquanto crias uma cidade. |
 
 ![Multiplayer](docs/screenshot-multiplayer.png)
 
@@ -119,6 +120,7 @@ client/            Vite + Phaser 3 (mundo) + DOM (HUD, diálogos, menus)
   src/ui/          hud, dialog (conversa com IA), panels, screens
   src/state.js     estado, sobrevivência, aplicar ações, XP, vocabulário, save (localStorage)
   src/flux.js      microfone → servidor → Deepgram Flux; speech.js: vozes e a alternativa do browser
+  src/viewer/      visualizador de cidades: 3D (Three.js) e primeira pessoa (ray casting)
 server/            Node + Express + ws
   index.js         API: /api/packs, /api/npc/turn, /api/chat/check, /api/llm/test, /api/config, /api/save/:id
   packs.js         compila as cidades de packs/ quando o servidor arranca
@@ -132,6 +134,7 @@ server/            Node + Express + ws
 shared/            usado por cliente E servidor
   engine.js        as regras: missões, validação de ações, efeitos, gerador diário
   pack.js          ler uma cidade: modelos de texto e condições
+  scene.js         uma cidade como cena 3D, lida por todas as vistas
   data.js          igual em todas as cidades: níveis CEFR, profissões
 packs/             as cidades, uma pasta de YAML cada
   maple-city/      cidade, mapa, locais, pessoas, ações, missões

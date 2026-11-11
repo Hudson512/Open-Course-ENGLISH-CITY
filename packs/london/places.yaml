@@ -290,7 +290,7 @@ offices:
   name: "Canal Wharf Offices"
   short: "Offices"
   icon: 🏙️
-  building: { at: [94, 19], size: [13, 20], door: left, color: "#636e72", roof: "#2d3436" }
+  building: { at: [94, 19], size: [13, 20], door: left, color: "#636e72", roof: "#2d3436", floors: 9 }
   character:
     id: manager
     name: "James"

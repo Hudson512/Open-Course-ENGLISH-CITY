@@ -222,6 +222,12 @@ The buildings people can enter are not here: each one is the `building:` line of
 | A passage must be wider than the player (a little more than one cell) | narrower gaps look open but are not |
 | `spawn` and `taxi_stand` are not inside a building | the player would start stuck |
 
+**See it in 3D.** Open **http://localhost:8787/viewer.html?city=my-city** (or 🗺️ on the game's title
+screen). It shows the same city three ways: the map picture, a 3D city you can turn around, and walking
+through the streets in first person. The server reads cities when it starts, so restart it after a change.
+A building's height comes from its size; to choose it, add `floors` to `building:` (or to a `decor` entry):
+`building: { at: [94, 19], size: [13, 20], door: left, floors: 9 }`.
+
 **Sizes that work:** a small shop is about 8 × 8 cells, a supermarket 14 × 10, an airport 14 × 24. Under
 5 × 5 the name does not fit on the building (the checker tells you). Whole maps of about 110 × 90 cells take
 a couple of minutes to cross on foot, which is right for a city with a dozen places.

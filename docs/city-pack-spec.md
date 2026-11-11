@@ -390,6 +390,19 @@ map check: "pharmacy" overlaps the road at row 45. Move it up by 1 cell.
    board lists available packs.
 4. **Contributor guide** ("add a place in ten minutes") and updates to the three READMEs.
 
+## 8b. Seeing a city (2D, 3D, first person)
+
+`shared/scene.js` turns a compiled pack into one scene description: the buildings with their heights
+(`floors`, optional on `building:` and on `decor` entries, otherwise derived from the footprint), the ground
+(grass, road, park) per cell, and which building stands on each cell. Three views read it:
+
+- the map picture (`tools/pack/preview.js`, also written by `npm run pack`);
+- a 3D city with Three.js (`client/src/viewer/three-view.js`);
+- first person by ray casting, as in Wolfenstein 3D (`client/src/viewer/raycast.js`): one ray per screen
+  column walks the cell grid; rays continue past the first wall so taller buildings behind show above.
+
+They are shown together in the city viewer, `viewer.html?city=<id>`.
+
 ## 9. Left open on purpose
 
 - **Interiors (Three.js).** A place may carry an `interior:` block (`model: assets/bakery.glb`, or a room
