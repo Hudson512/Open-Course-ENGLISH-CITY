@@ -13,6 +13,14 @@ async function get(url) {
 // The cities on the departures board.
 export const listPacks = () => get('/api/packs');
 
+// The English course given in the school (the same in every city). null if the server has none.
+let course;
+export async function loadCourse() {
+  if (course === undefined) course = await get('/api/course').catch(() => null);
+  return course;
+}
+export const getCourse = () => course || null;
+
 export async function loadPack(id) {
   if (pack?.id !== id) pack = await get(`/api/packs/${encodeURIComponent(id)}`);
   return pack;

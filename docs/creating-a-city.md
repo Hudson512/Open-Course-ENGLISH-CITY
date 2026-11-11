@@ -14,6 +14,7 @@ This guide is the practical part. Every field and rule is listed in the
 - [Add a mission](#add-a-mission)
 - [Draw the map](#draw-the-map)
 - [Create a new city](#create-a-new-city)
+- [Lessons and the school](#lessons-and-the-school)
 - [When the checker complains](#when-the-checker-complains)
 - [Writing good characters and missions](#writing-good-characters-and-missions)
 - [Before you open a pull request](#before-you-open-a-pull-request)
@@ -272,6 +273,57 @@ npm start
 
 Your city appears on the departures board as an open flight. Restart the server after changing a pack:
 cities are read when it starts.
+
+## Lessons and the school
+
+Every city has an English school: a place with `school: true` in `places.yaml`, whose character is the
+teacher. Walking in opens the classroom — a blackboard and the teacher — where the player takes the
+lessons of the course, hears each phrase, says it into the microphone, does a few exercises and keeps the
+phrases in the notebook. The checker refuses a city without a school.
+
+```yaml
+school:
+  name: "Kingsway English School"
+  short: "English school"
+  icon: 🏫
+  school: true
+  building: { at: [2, 50], size: [14, 10], door: top, color: "#f6e58d", roof: "#2c3e50", floors: 3 }
+  character:
+    id: teacher
+    name: "Mr. Grant"
+    emoji: 👨‍🏫
+    voice: { gender: male, rate: 0.9 }
+    role: "English teacher at Kingsway English School"
+    persona: >
+      Oliver Grant, 46, patient and cheerful English teacher. Speaks slowly and clearly.
+```
+
+The lessons are the same in every city and live in [`courses/english/`](../courses/english/), one file
+per level (`a1.yaml`, `a2.yaml`…), in teaching order:
+
+```yaml
+- id: a1-taxi
+  title: { en: Taking a taxi, pt: Apanhar um táxi }
+  goal: { en: Say where you are going and agree the fare., pt: Dizer para onde vais e combinar o preço da corrida. }
+  phrases:
+    - { en: "How much is it to …?", pt: "Quanto custa até …?" }
+    - { en: "That's too expensive.", "en-GB": "That's a bit steep.", pt: "Isso é muito caro." }
+  tip: { en: …, pt: … }
+  exercises:
+    - { type: gap, text: "How ___ is it to the hotel?", options: [much, many, cost], answer: much }
+    - { type: order, answer: "Can you take me to the station" }
+    - type: choose
+      prompt: { en: "The driver asks for 75. You say:", pt: "O taxista pede 75. Dizes:" }
+      options: ["That's too expensive. Can you do it for fifty?", "Keep the change."]
+      answer: "That's too expensive. Can you do it for fifty?"
+```
+
+- `en-GB` / `en-US` give the phrase as said in that kind of English; London shows "That's a bit steep".
+- A mission says which lesson prepares it with `lesson: a1-taxi` in `missions.yaml`. The phone then
+  reminds the player to take that lesson before the mission, and the GPS can guide them to the school.
+- The server checks the course when it starts and explains any mistake (a missing translation, an answer
+  that is not among the options…); `npm test` checks it too.
+
 
 ## When the checker complains
 

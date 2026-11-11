@@ -64,7 +64,7 @@
 <rect x="40" y="40" width="280" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
 <rect x="1220" y="40" width="500" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
 <rect x="1880" y="40" width="280" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
-<rect x="40" y="1000" width="280" height="400" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="40" y="1240" width="280" height="160" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
 <rect x="1500" y="1000" width="220" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
 <rect x="1220" y="1240" width="500" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
 <rect x="1880" y="1000" width="280" height="400" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
@@ -129,6 +129,10 @@
 <text x="2010" y="574" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">🏙️ Offices</text>
 <text x="2010" y="604" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">offices</text>
 <circle cx="1862" cy="580" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of offices</title></circle>
+<rect x="40" y="1000" width="280" height="200" fill="#f6e58d" stroke="#2c3e50" stroke-width="6" rx="6"/>
+<text x="180" y="1094" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">🏫 English school</text>
+<text x="180" y="1124" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">school</text>
+<circle cx="180" cy="982" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of school</title></circle>
 <rect x="389" y="524" width="32" height="32" rx="6" fill="#f9ca24" stroke="#2f3542" stroke-width="3"/>
 <text x="405" y="547" font-size="20" text-anchor="middle">🚕</text>
 <circle cx="390" cy="640" r="14" fill="#eb4d4b" stroke="#ffffff" stroke-width="4"><title>spawn: where the player lands</title></circle>

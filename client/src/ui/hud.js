@@ -4,8 +4,11 @@ import { getPack, fmtMoney, packFlags } from '../pack.js';
 import { getState, levelFor, trackedMission, missionInfo, bus } from '../state.js';
 import { t } from '../i18n.js';
 import { online, others } from '../net.js';
+import { phoneNotes } from '../../../shared/course.js';
+import { getCourse } from '../pack.js';
 
 let root, statsEl, missionEl, promptEl, toastsEl, netEl;
+let phoneBtn = null;
 let scheduled = false;
 
 export function mountHUD() {
@@ -20,7 +23,7 @@ export function mountHUD() {
   setTimeout(() => help.classList.add('fade'), 25000);
   const buttons = h('div', { class: 'hud-buttons' },
     btn('📋', t('missions'), 'missions'), btn('🎒', t('inventory'), 'inventory'),
-    btn('📒', t('notebook'), 'notebook'), btn('📱', t('phone'), 'phone'),
+    btn('📒', t('notebook'), 'notebook'), phoneBtn = btn('📱', t('phone'), 'phone'),
     h('button', { class: 'icon-btn', title: t('fpToggle'), onclick: () => bus.emit('toggle-view') }, '🎥'),
     btn('⚙️', t('settings'), 'settings'));
   root.append(statsEl, missionEl, promptEl, toastsEl, netEl, buttons, help, h('div', { class: 'minimap-frame' }));
@@ -85,6 +88,11 @@ function render() {
     );
   } else missionEl.append(h('div', { class: 'mission-title' }, '—'));
 
+  if (phoneBtn) {                                                  // how many notes wait on the phone
+    const n = phoneNotes({ course: getCourse(), pack: getPack(), state: s }).length;
+    phoneBtn.dataset.badge = n || '';
+    phoneBtn.classList.toggle('has-badge', n > 0);
+  }
   netEl.textContent = online ? `🟢 ${others.size + 1} ${t('online')} · ${t('chatHint')}` : `⚪ ${t('offline')}`;
 }
 

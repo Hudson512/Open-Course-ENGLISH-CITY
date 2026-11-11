@@ -10,6 +10,7 @@ import { mockTurn } from './mock.js';
 import { attachMultiplayer } from './multiplayer.js';
 import { viewMission } from '../shared/engine.js';
 import { loadPacks, packSummary } from './packs.js';
+import { loadCourse } from '../tools/course/compile.js';
 import { postgresStore, validId, validToken } from './db.js';
 import { deepgramVoices, pickVoice, MAX_TTS_CHARS } from './tts.js';
 import { listeningServer } from './stt.js';
@@ -21,7 +22,8 @@ const HOST = process.env.HOST || '0.0.0.0';
 // `store` (see db.js) enables server-side saves; without it the game is localStorage-only.
 // `packs` are the compiled cities (see packs.js), by id.
 // `voices` (see tts.js) gives characters a Deepgram voice; without it the browser's voices are used.
-export function createApp({ store = null, packs = loadPacks(), voices = deepgramVoices() } = {}) {
+// `course`: the English course (courses/english), given in every city's school.
+export function createApp({ store = null, packs = loadPacks(), voices = deepgramVoices(), course = safeCourse() } = {}) {
   const app = express();
   app.use(express.json({ limit: '200kb' }));
 
@@ -42,6 +44,7 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
 
   // Cities: the list for the departures board, and one whole city for the game to draw and play.
   app.get('/api/packs', (req, res) => res.json(Object.values(packs).map(packSummary)));
+  app.get('/api/course', (req, res) => (course ? res.json(course) : res.status(404).json({ error: 'no course' })));
   app.get('/api/packs/:id', (req, res) => {
     const pack = Object.hasOwn(packs, req.params.id) ? packs[req.params.id] : null;
     if (!pack) return res.status(404).json({ error: 'city not found' });
@@ -187,6 +190,11 @@ export function createApp({ store = null, packs = loadPacks(), voices = deepgram
   return app;
 }
 
+// The course, or null (and an explanation in the log) if it has mistakes: the city still works without lessons.
+function safeCourse() {
+  try { return loadCourse(); } catch (e) { console.error(`[course] not loaded:\n${e.message}`); return null; }
+}
+
 // Websockets: /ws is the multiplayer city, /ws/listen is the player's microphone (see stt.js).
 export function attachSockets(server, { voices = null } = {}) {
   const routes = { '/ws': attachMultiplayer(), '/ws/listen': listeningServer(voices) };
@@ -201,12 +209,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const store = process.env.DATABASE_URL ? await postgresStore(process.env.DATABASE_URL) : null;
   const packs = loadPacks();
   const voices = deepgramVoices();
-  const server = http.createServer(createApp({ store, packs, voices }));
+  const course = safeCourse();
+  const server = http.createServer(createApp({ store, packs, voices, course }));
   attachSockets(server, { voices });
   server.listen(PORT, HOST, () => {
     const provider = process.env.LLM_PROVIDER || 'mock';
     console.log(`\n🗽  OpenCourse English City running → http://localhost:${PORT}`);
     console.log(`    LLM provider (server default): ${provider}${provider === 'mock' ? ' (offline — add a key in .env or in the game Settings)' : ''}`);
+    console.log(`    English course: ${course ? `${course.lessons.length} lessons` : 'none (check courses/)'}`);
     console.log(`    Cities: ${Object.values(packs).map(p => p.name).join(', ') || 'none (check packs/)'}`);
     console.log(`    Voices: ${voices ? 'Deepgram (Aura-2 voices, Flux listening)' : 'browser voices (set DEEPGRAM_API_KEY for natural ones)'}`);
     console.log(`    Saves: ${store ? 'Postgres (server-side)' : 'browser only (set DATABASE_URL to persist on the server)'}`);

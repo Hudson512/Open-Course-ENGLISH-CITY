@@ -47,7 +47,7 @@ export function openDialog(mission, { onClose } = {}) {
   );
   $('#overlay').append(panel);
 
-  current = { mission, history: [], done: [], playerTurns: 0, busy: false, completed: new Set(), panel, onClose, ended: false, rec: null, live: null };
+  current = { mission, history: [], done: [], playerTurns: 0, busy: false, completed: new Set(), panel, onClose, ended: false, rec: null, live: null, feedback: [], said: '' };
   // With Deepgram on the server the microphone goes through Flux (any browser, better with accents);
   // otherwise through the browser's own recogniser.
   let useFlux = false, speaking = false, muted = false;
@@ -116,6 +116,7 @@ export function openDialog(mission, { onClose } = {}) {
       showReply(res.reply);
       addTranslation(bubble, res.translation);
 
+      if (res.feedback && lastPlayerEl) mine.feedback.push({ said: mine.said, score: res.feedback.score, corrected: res.feedback.corrected });
       if (res.feedback && lastPlayerEl) {
         lastPlayerEl.append(feedbackBlock(res.feedback));
         S.addXP(Math.round(res.feedback.score / 10));
@@ -162,6 +163,23 @@ export function openDialog(mission, { onClose } = {}) {
     if (needsReaction) setTimeout(() => requestTurn(), 0);
   }
 
+  // At the end of a mission: how it went, and what to say better next time (saved to the notebook).
+  function addReport() {
+    const fb = current.feedback;
+    if (!fb.length) return;
+    const avg = Math.round(fb.reduce((n, f) => n + f.score, 0) / fb.length);
+    const norm = s => String(s).toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const fixes = fb.filter(f => f.corrected && norm(f.corrected) !== norm(f.said)).slice(-4);
+    if (fixes.length) S.addWords(fixes.map(f => ({ en: f.corrected, meaning: `${t('youSaid')}: ${f.said}` })), 'correction');
+    log.append(h('div', { class: 'report' },
+      h('h4', {}, `📋 ${t('report')}`),
+      h('div', {}, `${t('reportScore')}: `, h('b', {}, `${avg}/100`)),
+      fixes.length
+        ? h('div', {}, h('div', {}, `${t('reportFix')}:`), h('ul', {}, fixes.map(f => h('li', {}, h('s', {}, f.said), ' → ', h('b', {}, f.corrected)))), h('small', {}, `📒 ${t('reportSaved')}`))
+        : h('div', {}, `✨ ${t('reportGreat')}`)));
+    log.scrollTop = log.scrollHeight;
+  }
+
   function checkCompletion() {
     const loc = S.missionPlace(current.mission);
     const candidates = [current.mission, ...S.activeMissions().filter(m => m.uid !== current.mission.uid && loc && S.missionPlace(m) === loc)];
@@ -174,6 +192,7 @@ export function openDialog(mission, { onClose } = {}) {
         if (getPack().missions[m.templateId].with_person) onSmalltalkDone(m);
         banner.classList.remove('hidden');
         clear(banner).append(h('b', {}, `🏆 ${t('missionComplete')}`), ` ${title} · +${reward.xp} XP`);
+        if (m === current.mission) addReport();
       }
     }
   }
@@ -196,6 +215,7 @@ export function openDialog(mission, { onClose } = {}) {
     input.value = '';
     stopSpeaking();
     current.history.push({ role: 'player', text });
+    current.said = text;
     current.playerTurns++;
     S.getState().stats_total.messages++;
     S.advanceTime(2);

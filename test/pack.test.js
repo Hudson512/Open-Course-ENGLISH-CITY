@@ -21,7 +21,7 @@ test('pack: Maple City compiles to what the engine reads', () => {
   assert.deepEqual(pack.story, ['arrival_taxi', 'lodging', 'get_phone', 'open_bank', 'job_interview']);
   assert.deepEqual([pack.map.width, pack.map.height, pack.map.roads.length, pack.map.decor.length], [2400, 1900, 6, 14]);
   assert.deepEqual(pack.map.park, { id: 'park', name: 'Central Park', x: 440, y: 1040, w: 520, h: 420 });
-  assert.equal(Object.keys(pack.places).length, 13);
+  assert.equal(Object.keys(pack.places).length, 14);                    // 13 + the English school
   for (const p of Object.values(pack.places)) {
     assert.ok(p.character?.name && p.character.persona, p.id);
     assert.match(p.color, /^#[0-9a-f]{6}$/, p.id);
@@ -43,7 +43,7 @@ test('pack: London compiles, with its own map, money, ids and flags', () => {
   assert.deepEqual(london.start, { money: 500, mission: 'arrival_cab' });
   assert.deepEqual(london.story, ['arrival_cab', 'move_in', 'get_sim', 'get_oyster', 'bank_account', 'job_interview']);
   assert.deepEqual([london.map.width, london.map.height], [2200, 1800]);
-  assert.equal(Object.keys(london.places).length, 14);
+  assert.equal(Object.keys(london.places).length, 15);
   assert.deepEqual(london.places.tube.sells['Oyster card'].effects, [{ set_flag: 'oyster' }]);
   for (const job of Object.values(london.jobs)) assert.ok(london.places[job.workplace], job.title);
 

@@ -12,6 +12,7 @@
 
 arrival_taxi:
   kind: story
+  lesson: a1-taxi            # the English lesson that prepares this mission (courses/english)
   at: airport
   title: { en: Get a taxi from the airport, pt: Apanhe um táxi no aeroporto }
   goal:
@@ -38,6 +39,7 @@ arrival_taxi:
 
 lodging:
   kind: story
+  lesson: a1-lodging
   at: "{{choice.lodging_place}}"       # hotel or apartment, decided in the taxi
   variants:                            # same mission, different text depending on the place
     hotel:
@@ -67,6 +69,7 @@ lodging:
 
 get_phone:
   kind: story
+  lesson: a1-phone
   at: phone_store
   title: { en: Get a US phone number, pt: Arranja um número de telefone americano }
   goal:
@@ -210,6 +213,7 @@ online_chat:
 
 smalltalk:                             # starts when the player stops a pedestrian (people.yaml)
   kind: social
+  lesson: a1-first-words
   with_person: true
   title: { en: "Chat with {{person.name}}", pt: "Conversa com {{person.name}}" }
   goal:

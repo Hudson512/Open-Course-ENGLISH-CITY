@@ -15,6 +15,7 @@ Este guia é a parte prática. Todos os campos e regras estão na
 - [Acrescentar uma missão](#acrescentar-uma-missão)
 - [Desenhar o mapa](#desenhar-o-mapa)
 - [Criar uma cidade nova](#criar-uma-cidade-nova)
+- [Aulas e a escola](#aulas-e-a-escola)
 - [Quando o verificador se queixa](#quando-o-verificador-se-queixa)
 - [Escrever boas personagens e missões](#escrever-boas-personagens-e-missões)
 - [Antes de abrir um pull request](#antes-de-abrir-um-pull-request)
@@ -278,6 +279,57 @@ npm start
 
 A tua cidade aparece no painel de partidas como voo aberto. Reinicia o servidor depois de mudares um
 pack: as cidades são lidas no arranque.
+
+## Aulas e a escola
+
+Todas as cidades têm uma escola de inglês: um local com `school: true` em `places.yaml`, cuja personagem
+é o professor. Ao entrar abre-se a sala de aula — um quadro e o professor — onde o jogador faz as aulas do
+curso, ouve cada frase, repete-a ao microfone, faz alguns exercícios e guarda as frases no caderno. O
+verificador recusa uma cidade sem escola.
+
+```yaml
+school:
+  name: "Kingsway English School"
+  short: "English school"
+  icon: 🏫
+  school: true
+  building: { at: [2, 50], size: [14, 10], door: top, color: "#f6e58d", roof: "#2c3e50", floors: 3 }
+  character:
+    id: teacher
+    name: "Mr. Grant"
+    emoji: 👨‍🏫
+    voice: { gender: male, rate: 0.9 }
+    role: "English teacher at Kingsway English School"
+    persona: >
+      Oliver Grant, 46, patient and cheerful English teacher. Speaks slowly and clearly.
+```
+
+As aulas são as mesmas em todas as cidades e ficam em [`courses/english/`](../courses/english/), um
+ficheiro por nível (`a1.yaml`, `a2.yaml`…), pela ordem em que se ensinam:
+
+```yaml
+- id: a1-taxi
+  title: { en: Taking a taxi, pt: Apanhar um táxi }
+  goal: { en: Say where you are going and agree the fare., pt: Dizer para onde vais e combinar o preço da corrida. }
+  phrases:
+    - { en: "How much is it to …?", pt: "Quanto custa até …?" }
+    - { en: "That's too expensive.", "en-GB": "That's a bit steep.", pt: "Isso é muito caro." }
+  tip: { en: …, pt: … }
+  exercises:
+    - { type: gap, text: "How ___ is it to the hotel?", options: [much, many, cost], answer: much }
+    - { type: order, answer: "Can you take me to the station" }
+    - type: choose
+      prompt: { en: "The driver asks for 75. You say:", pt: "O taxista pede 75. Dizes:" }
+      options: ["That's too expensive. Can you do it for fifty?", "Keep the change."]
+      answer: "That's too expensive. Can you do it for fifty?"
+```
+
+- `en-GB` / `en-US` dão a frase como se diz nesse inglês; Londres mostra "That's a bit steep".
+- Uma missão diz que aula a prepara com `lesson: a1-taxi` em `missions.yaml`. O telemóvel lembra o
+  jogador de fazer essa aula antes da missão, e o GPS pode levá-lo à escola.
+- O servidor verifica o curso ao arrancar e explica qualquer erro (uma tradução em falta, uma resposta
+  que não está nas opções…); o `npm test` também o verifica.
+
 
 ## Quando o verificador se queixa
 

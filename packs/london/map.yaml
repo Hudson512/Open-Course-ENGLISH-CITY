@@ -17,7 +17,7 @@ decor:                       # buildings you cannot enter
   - { at: [2, 2], size: [14, 9] }
   - { at: [61, 2], size: [25, 9] }
   - { at: [94, 2], size: [14, 9] }
-  - { at: [2, 50], size: [14, 20] }
+  - { at: [2, 62], size: [14, 8] }
   - { at: [75, 50], size: [11, 9] }
   - { at: [61, 62], size: [25, 9] }
   - { at: [94, 50], size: [14, 20] }

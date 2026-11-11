@@ -4,6 +4,7 @@ import { getPack, fmtMoney, arrivalPlace, visitMission, socialMission } from '..
 import * as S from '../state.js';
 import { t, tr, setLang } from '../i18n.js';
 import { api, getSettings, saveSettings } from '../api.js';
+import { dueCards } from '../../../shared/course.js';
 
 let openModal = null;
 export const modalOpen = () => !!openModal;
@@ -87,7 +88,10 @@ export function notebookPanel(mode = 'list') {
 }
 
 function reviewCard(words) {
-  const due = words.filter(([, v]) => v.meaning).sort((a, b) => a[1].box - b[1].box || Math.random() - 0.5).slice(0, 10);
+  // the cards whose time has come first (spaced repetition), then the least known
+  const today = S.getState().time.day;
+  const waiting = dueCards(S.getState().vocab, today);
+  const due = (waiting.length ? waiting : words.filter(([, v]) => v.meaning).sort((a, b) => a[1].box - b[1].box)).slice(0, 12);
   let i = 0;
   const card = h('div', { class: 'flashcard' });
   const show = () => {
@@ -97,17 +101,26 @@ function reviewCard(words) {
     clear(card).append(h('div', { class: 'muted' }, `${i + 1}/${due.length}`), h('div', { class: 'front' }, w), back,
       h('div', { class: 'row' },
         h('button', { class: 'ghost', onclick: () => back.classList.remove('hidden') }, t('reveal')),
-        h('button', { class: 'ghost', onclick: () => { v.box = Math.max(0, v.box - 1); i++; show(); } }, t('notYet')),
-        h('button', { class: 'primary', onclick: () => { v.box = Math.min(5, v.box + 1); S.addXP(2); i++; S.save(); show(); } }, t('knew'))));
+        h('button', { class: 'ghost', onclick: () => { v.box = 0; v.reviewed = today; i++; S.save(); show(); } }, t('notYet')),
+        h('button', { class: 'primary', onclick: () => { v.box = Math.min(5, (v.box || 0) + 1); v.reviewed = today; S.addXP(2); i++; S.save(); show(); } }, t('knew'))));
   };
   show();
   modal(`🃏 ${t('review')}`, card);
 }
 
 // ── Phone: taxi app ─────────────────────────────────────────────
-export function phonePanel({ onTaxi }) {
+export function phonePanel({ onTaxi, notes = [] }) {
   const s = S.getState();
+  const school = getPack().places[getPack().school];
+  const note = n => n.kind === 'lesson'
+    ? h('div', { class: `note ${n.forMission ? 'urgent' : ''}` }, h('span', {}, '📚'),
+        h('div', {}, h('b', {}, (n.forMission ? t('noteLessonUrgent') : t('noteLesson')).replace('{lesson}', tr(n.lesson.title))), h('small', {}, `${n.lesson.level} · ${school ? school.name : ''}`)),
+        school ? h('button', { class: 'primary small', onclick: () => { S.guideTo(school.id); closeModal(); S.bus.emit('toast', { text: `🧭 ${t('goToSchool')}: ${school.name}` }); } }, t('goToSchool')) : null)
+    : h('div', { class: 'note' }, h('span', {}, '🃏'), h('div', {}, h('b', {}, t('noteReview').replace('{n}', n.count))),
+        h('button', { class: 'primary small', onclick: () => notebookPanel('review') }, t('reviewNow')));
   const body = h('div', { class: 'phone' },
+    h('h3', {}, `📝 ${t('notes')}`),
+    h('div', { class: 'notes' }, notes.length ? notes.map(note) : h('p', { class: 'muted' }, t('noNotes'))),
     h('div', { class: 'phone-apps' },
       app('📋', t('missions'), missionsPanel), app('🎒', t('inventory'), inventoryPanel),
       app('📒', t('notebook'), () => notebookPanel()), app('⚙️', t('settings'), settingsPanel)),

@@ -5,7 +5,7 @@ import * as S from './state.js';
 import { setLang, t } from './i18n.js';
 import { getSettings } from './api.js';
 import { connect } from './net.js';
-import { getPack, listPacks, loadPack } from './pack.js';
+import { getPack, listPacks, loadPack, loadCourse } from './pack.js';
 import { titleScreen, createScreen, departuresScreen, hideScreen, gameOverScreen } from './ui/screens.js';
 import { mountGameUI, openPanel } from './ui/ui.js';
 import { levelFor } from '../../shared/data.js';
@@ -33,7 +33,7 @@ function boot(notice) {
 
 // Fetch the city, then play in it — a new life when `player` is given, the saved one otherwise.
 async function enter(packId, player) {
-  try { await loadPack(packId); } catch (e) { return boot(`${t('cityFailed')} (${e.message})`); }
+  try { await Promise.all([loadPack(packId), loadCourse()]); } catch (e) { return boot(`${t('cityFailed')} (${e.message})`); }
   if (player) S.newGame(player);
   S.ensureDaily();
   startWorld(!!player);

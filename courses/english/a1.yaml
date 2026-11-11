@@ -1,0 +1,109 @@
+# English course — level A1 (beginner). Lessons are given in the school of every city, in this order.
+# A city mission can say which lesson prepares it (`lesson:` in missions.yaml).
+#
+#   phrases     what the teacher writes on the board; `pt` is the meaning in the player's language.
+#               `en-GB` / `en-US`: how it is said in that kind of English, when it differs.
+#   tip         a short explanation, only when it helps.
+#   exercises   gap (pick the missing word), order (put the words in order), choose (pick the answer).
+# Format: docs/creating-a-city.md, "Lessons".
+
+- id: a1-first-words
+  title: { en: First words, pt: Primeiras palavras }
+  goal: { en: Say hello, introduce yourself and ask someone to repeat., pt: Cumprimentar, apresentar-te e pedir para repetirem. }
+  phrases:
+    - { en: "Hello! / Hi!", pt: "Olá!" }
+    - { en: "My name is …", pt: "O meu nome é …" }
+    - { en: "I'm from …", pt: "Sou de …" }
+    - { en: "Nice to meet you.", pt: "Muito prazer." }
+    - { en: "Please. / Thank you.", pt: "Por favor. / Obrigado(a)." }
+    - { en: "Sorry, I don't understand.", pt: "Desculpe, não percebo." }
+    - { en: "Can you repeat that, please?", pt: "Pode repetir, por favor?" }
+    - { en: "Can you speak more slowly, please?", pt: "Pode falar mais devagar, por favor?" }
+  tip:
+    en: Put "please" at the end of a question to make it polite.
+    pt: >
+      Em inglês o "please" no fim da pergunta torna-a educada: "Can you repeat that, please?".
+      E diz-se "I'm from Angola", nunca "I'm of Angola".
+  exercises:
+    - { type: gap, text: "My ___ is Ana.", options: [name, called, is], answer: name }
+    - { type: gap, text: "I'm ___ Luanda.", options: [of, from, in], answer: from }
+    - { type: order, answer: "Can you repeat that please" }
+    - type: choose
+      prompt: { en: "You didn't understand what someone said. You say:", pt: "Não percebeste o que te disseram. Dizes:" }
+      options: ["Sorry, I don't understand.", "Nice to meet you.", "I'm from Angola."]
+      answer: "Sorry, I don't understand."
+
+- id: a1-taxi
+  title: { en: Taking a taxi, pt: Apanhar um táxi }
+  goal: { en: Say where you are going and agree the fare., pt: Dizer para onde vais e combinar o preço da corrida. }
+  phrases:
+    - { en: "Can you take me to …?", pt: "Pode levar-me a …?" }
+    - { en: "How much is it to …?", pt: "Quanto custa até …?" }
+    - { en: "That's too expensive.", "en-GB": "That's a bit steep.", pt: "Isso é muito caro." }
+    - { en: "Can you do it for twenty?", "en-GB": "Could you do it for twenty?", pt: "Pode fazer por vinte?" }
+    - { en: "OK, it's a deal.", pt: "Está bem, combinado." }
+    - { en: "Can I put my suitcase in the trunk?", "en-GB": "Can I put my suitcase in the boot?", pt: "Posso pôr a mala na bagageira?" }
+    - { en: "Keep the change.", pt: "Fique com o troco." }
+  tip:
+    en: To ask a price use "How much is it…?". To ask for something politely use "Can you…?" or, more polite, "Could you…?".
+    pt: >
+      Para perguntar preços: "How much is it to the hotel?". Para pedir um favor: "Can you…?";
+      "Could you…?" é ainda mais educado. Os números: 10 ten, 20 twenty, 30 thirty, 40 forty, 50 fifty.
+  exercises:
+    - { type: gap, text: "How ___ is it to the hotel?", options: [much, many, cost], answer: much }
+    - { type: order, answer: "Can you take me to the station" }
+    - type: choose
+      prompt: { en: "The driver asks for 75. You think it is a lot. You say:", pt: "O taxista pede 75. Achas muito. Dizes:" }
+      options: ["That's too expensive. Can you do it for fifty?", "Keep the change.", "Nice to meet you."]
+      answer: "That's too expensive. Can you do it for fifty?"
+    - { type: gap, text: "Forty, ___, sixty.", options: [fivety, fifty, fifteen], answer: fifty }
+
+- id: a1-lodging
+  title: { en: A place to stay, pt: Arranjar onde ficar }
+  goal: { en: Book a room, say how long you are staying and pay., pt: Reservar um quarto, dizer quanto tempo ficas e pagar. }
+  phrases:
+    - { en: "I'd like a room, please.", pt: "Queria um quarto, por favor." }
+    - { en: "For three nights.", pt: "Para três noites." }
+    - { en: "How much is it per night?", pt: "Quanto custa por noite?" }
+    - { en: "Is breakfast included?", pt: "O pequeno-almoço está incluído?" }
+    - { en: "Can I pay by card?", pt: "Posso pagar com cartão?" }
+    - { en: "What time is check-out?", pt: "A que horas é o check-out?" }
+    - { en: "I'm looking for a room to rent.", pt: "Procuro um quarto para arrendar." }
+    - { en: "I work as a nurse.", pt: "Trabalho como enfermeiro(a)." }
+  tip:
+    en: '"I''d like…" is the polite way to say what you want. "I want…" can sound rude.'
+    pt: >
+      "I'd like…" (= I would like) é a forma educada de dizer o que queres; "I want…" pode soar
+      rude. Profissões levam "a/an": "I'm a teacher", "I'm an engineer".
+  exercises:
+    - { type: gap, text: "I'd ___ a room, please.", options: [like, want, have], answer: like }
+    - { type: gap, text: "I'm ___ engineer.", options: [a, an, the], answer: an }
+    - { type: order, answer: "How much is it per night" }
+    - type: choose
+      prompt: { en: "You want to know if you can pay with your card. You ask:", pt: "Queres saber se podes pagar com cartão. Perguntas:" }
+      options: ["Can I pay by card?", "Is breakfast included?", "For three nights."]
+      answer: "Can I pay by card?"
+
+- id: a1-phone
+  title: { en: Getting a phone number, pt: Arranjar um número de telefone }
+  goal: { en: Buy a SIM card and ask about prices and data., pt: Comprar um cartão SIM e perguntar por preços e dados. }
+  phrases:
+    - { en: "I need a SIM card.", pt: "Preciso de um cartão SIM." }
+    - { en: "Is my phone unlocked?", pt: "O meu telemóvel está desbloqueado?" }
+    - { en: "How much data do I get?", pt: "Quantos dados tenho?" }
+    - { en: "Is it prepaid or monthly?", "en-GB": "Is it pay-as-you-go or a contract?", pt: "É pré-pago ou mensal?" }
+    - { en: "Does it include calls and texts?", pt: "Inclui chamadas e mensagens?" }
+    - { en: "I'll take it.", pt: "Fico com ele." }
+    - { en: "No, thanks. Just the SIM card.", pt: "Não, obrigado(a). Só o cartão SIM." }
+  tip:
+    en: '"I''ll take it" means you have decided to buy something.'
+    pt: >
+      "I'll take it" (= I will take it) quer dizer que decidiste comprar. Para recusar com
+      educação: "No, thanks." Em inglês dos EUA diz-se "cell phone"; no Reino Unido, "mobile".
+  exercises:
+    - { type: gap, text: "I ___ a SIM card.", options: [need, needs, needing], answer: need }
+    - { type: order, answer: "Does it include calls and texts" }
+    - type: choose
+      prompt: { en: "The clerk offers you a phone case. You don't want it. You say:", pt: "O vendedor oferece-te uma capa. Não queres. Dizes:" }
+      options: ["No, thanks. Just the SIM card.", "I'll take it.", "How much data do I get?"]
+      answer: "No, thanks. Just the SIM card."

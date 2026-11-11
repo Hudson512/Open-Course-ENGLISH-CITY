@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
+import { loadCourse } from '../course/compile.js';
 import { LEVELS, PROFESSIONS } from '../../shared/data.js';
 import { templateTags } from '../../shared/pack.js';
 
@@ -61,10 +62,20 @@ export function readPack(dir) {
   return { id: path.basename(path.resolve(dir)), sources, errors };
 }
 
-export function compilePack(dir) {
+// `lessons`: ids of the English course's lessons, to check the `lesson:` of missions
+// (by default the course in courses/english; pass null to skip the check).
+export function compilePack(dir, { lessons = courseLessons() } = {}) {
   const { id, sources, errors } = readPack(dir);
   if (errors.length) throw new PackError(id, errors);
-  return compileSources(sources, id);
+  return compileSources(sources, id, { lessons });
+}
+
+let lessonIds;
+function courseLessons() {
+  if (lessonIds === undefined) {
+    try { lessonIds = (loadCourse()?.lessons || []).map(l => l.id); } catch { lessonIds = null; }   // a broken course is reported by its own check
+  }
+  return lessonIds;
 }
 
 // ── Shape checks ────────────────────────────────────────────────
@@ -164,7 +175,7 @@ const SHAPES = {
     spawn: [pair, 'where the player appears'], taxi_stand: pair
   }),
   places: mapOf(obj({
-    name: [str, 'the full name'], short: [str, 'a one- or two-word name'], icon: str,
+    name: [str, 'the full name'], short: [str, 'a one- or two-word name'], icon: str, school: bool,
     building: [obj({
       at: [pair, '[column, row] of the top-left corner'], size: [pair, '[columns, rows]'],
       door: [(v, p, E) => (Array.isArray(v) ? pair(v, p, E) : oneOf(...SIDES)(v, p, E)), 'the side facing the street: top, bottom, left or right'],
@@ -190,7 +201,7 @@ const SHAPES = {
     kind: [oneOf(...MISSION_KINDS), ''], at: str, character: str, ...texts,
     variants: mapOf(obj(texts)), lists: mapOf(list(str)), allow: list(str), vocabulary: list(str),
     complete: cond, requires: cond, reward: obj({ xp: num, social: num }),
-    once_per: oneOf('day'), retry: oneOf('next_day'), with_person: bool
+    once_per: oneOf('day'), retry: oneOf('next_day'), with_person: bool, lesson: str
   }), true)
 };
 
@@ -236,7 +247,7 @@ const flagsSet = effects => (effects || []).filter(e => e.set_flag).map(e => e.s
 const itemsOf = place => ({ ...place?.sells, ...place?.services });
 
 // ── Compile ─────────────────────────────────────────────────────
-export function compileSources(src, id = src.city?.id || 'pack') {
+export function compileSources(src, id = src.city?.id || 'pack', { lessons = null } = {}) {
   const errors = [];
   const E = (where, msg) => errors.push(`${where.join(' › ')}: ${msg}`);
   const stop = () => { if (errors.length) throw new PackError(id, errors); };
@@ -467,11 +478,19 @@ export function compileSources(src, id = src.city?.id || 'pack') {
   }
   for (const [flag, where] of needed) if (!setters.has(flag)) E(where, `reads the flag "${flag}", but nothing in the pack sets it.${known([...setters])}`);
 
+  // the English school: every city has exactly one, where the lessons are given
+  const schools = placeIds.filter(pid => places[pid].school);
+  if (!schools.length) E(['places.yaml'], 'every city needs a school, where the English lessons are given: add "school: true" to one place (with a teacher as its character)');
+  if (schools.length > 1) E(['places.yaml'], `only one place can be the school; found ${schools.join(', ')}`);
+  if (lessons) for (const [mid, mi] of Object.entries(missions)) {
+    if (mi.lesson && !lessons.includes(mi.lesson)) E(['missions.yaml', mid, 'lesson'], `unknown lesson "${mi.lesson}".${known(lessons)}`);
+  }
+
   stop();
   return {
     format: FORMAT, ...cityInfo, version: String(city.version ?? '1'), start: city.start, story: city.story,
     daily: city.daily || { count: 0, pool: [] }, jobs: city.jobs,
     map: { cell: C, width: W, height: H, roads: roads.map(({ label, ...r }) => r), park, decor, spawn, taxiStand },
-    places: outPlaces, people, actions, missions
+    places: outPlaces, people, actions, missions, school: schools[0]
   };
 }

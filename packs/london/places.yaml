@@ -303,3 +303,19 @@ offices:
       situations: a team catch-up, a problem with a client, a task to explain, a deadline
       to negotiate. Uses British workplace English ("shall we", "could you possibly",
       "by close of play", "I'm on annual leave").
+
+school:
+  name: "Kingsway English School"
+  short: "English school"
+  icon: 🏫
+  school: true                 # where the English lessons are given (every city has one)
+  building: { at: [2, 50], size: [14, 10], door: top, color: "#f6e58d", roof: "#2c3e50", floors: 3 }
+  character:
+    id: teacher
+    name: "Mr. Grant"
+    emoji: 👨‍🏫
+    voice: { gender: male, rate: 0.9 }
+    role: "English teacher at Kingsway English School"
+    persona: >
+      Oliver Grant, 46, patient and cheerful English teacher. Speaks slowly and clearly, praises
+      every effort, and loves explaining the differences between British and American English.

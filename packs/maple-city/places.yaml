@@ -277,3 +277,19 @@ offices:
       Sarah Mitchell, 40, busy but fair team manager. Gives realistic daily work situations:
       stand-up meetings, a problem with a client, a task to explain, a deadline to
       negotiate. Uses workplace English ("let's circle back", "ASAP", "touch base").
+
+school:
+  name: "Maple English Academy"
+  short: "English school"
+  icon: 🏫
+  school: true                 # where the English lessons are given (every city has one)
+  building: { at: [2, 52], size: [11, 10], door: top, color: "#f6e58d", roof: "#2c3e50", floors: 3 }
+  character:
+    id: teacher
+    name: "Ms. Rivera"
+    emoji: 👩‍🏫
+    voice: { gender: female, rate: 0.9 }
+    role: "English teacher at Maple English Academy"
+    persona: >
+      Elena Rivera, 39, warm and encouraging English teacher who came to the US from Mexico as a
+      teenager. Speaks slowly and clearly and remembers how hard the first weeks are.

@@ -30,6 +30,7 @@ export function load() {
 
 // Saves made before cities were packs: the only city was Maple City.
 function migrate(s) {
+  if (s && !s.course) s.course = { done: {} };                         // saves from before the school
   if (!s || s.pack) return s;
   s.pack = 'maple-city';
   s.choices = { lodging_place: s.pendingDestination || s.home || 'hotel' };
@@ -92,6 +93,7 @@ export function newGame(player) {
     job: null,
     inventory: [],
     vocab: {},
+    course: { done: {} },  // lessons taken at the school: id → { day, score }
     missions: { storyIndex: first, story: { uid: `story-${first}`, templateId: pack.story[first], params: {} }, daily: [], dailyDay: 0, trackedUid: `story-${first}`, chattedToday: [] },
     position: { ...pack.map.spawn },
     stats_total: { messages: 0, missions: 0, words: 0 },
@@ -234,6 +236,32 @@ export function activeMissions() {
 const view = m => viewMission(getPack(), m, state);
 export const missionPlace = m => view(m)?.placeId || null;
 export const missionTarget = m => placePoint(placeById(missionPlace(m)));
+
+// ── School ──────────────────────────────────────────────────────
+// A lesson finished in the classroom: remembered, rewarded, its phrases go to the notebook.
+export function completeLesson(lesson, score, phrases) {
+  const first = !state.course.done[lesson.id];
+  state.course.done[lesson.id] = { day: state.time.day, score };
+  addWords(phrases, 'lesson');
+  const xp = first ? 30 + score * 5 : 5;
+  addXP(xp);
+  save(); changed();
+  return xp;
+}
+
+// Somewhere the player asked to be guided to (e.g. the school from a phone note): the GPS points there
+// until they arrive, instead of at the tracked mission.
+let navTo = null;
+export function guideTo(placeId) { navTo = placeId; changed(); }
+export function gpsTarget(at) {
+  if (navTo) {
+    const p = placePoint(placeById(navTo));
+    if (p && at && Math.hypot(p.x - at.x, p.y - at.y) < 70) navTo = null;
+    else if (p) return p;
+  }
+  const m = trackedMission();
+  return (m && missionTarget(m)) || null;
+}
 
 export function missionInfo(m) {
   const v = view(m);

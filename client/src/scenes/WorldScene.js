@@ -390,8 +390,7 @@ export class WorldScene extends Phaser.Scene {
       moving.push({ id: `p-${id}`, kind: 'person', x: r.sp.x, y: r.sp.y, angle: r.sp.rotation, color: hexColour(r.sp.tintTopLeft), label: r.tag.text, say: this.bubbles.get(id)?.text });
       others.push({ x: r.sp.x, y: r.sp.y });
     }
-    const m = S.trackedMission();
-    const frame = { me: { x: this.player.x, y: this.player.y, a: this.fpA }, moving, others, night: this.night.fillAlpha, target: (m && S.missionTarget(m)) || null, dt, colour: hexColour(S.getState().player.color) };
+    const frame = { me: { x: this.player.x, y: this.player.y, a: this.fpA }, moving, others, night: this.night.fillAlpha, target: S.gpsTarget(this.player), dt, colour: hexColour(S.getState().player.color) };
     if (this.viewMode === 'fp') this.fp.frame(frame);
     else if (this.viewMode === '3d' && this.g3d) this.g3d.frame(frame);
   }
@@ -484,8 +483,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   updateGPS() {
-    const m = S.trackedMission();
-    const target = m && S.missionTarget(m);
+    const target = S.gpsTarget(this.player);
     if (!target) { this.arrow.setVisible(false); this.targetRing.setVisible(false); this.miniTarget.setVisible(false); return; }
     this.targetRing.setVisible(true).setPosition(target.x, target.y);
     this.miniTarget.setVisible(true).setPosition(target.x, target.y);

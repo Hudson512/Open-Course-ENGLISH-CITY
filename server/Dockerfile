@@ -8,6 +8,7 @@ COPY server ./server
 COPY shared ./shared
 COPY tools ./tools
 COPY packs ./packs
+COPY courses ./courses
 USER node
 EXPOSE 8787
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=5 \

@@ -7,19 +7,22 @@ import { modalOpen, closeModal, missionsPanel, inventoryPanel, notebookPanel, ph
 import { mountHUD, scheduleRender, showPrompt, toast } from './hud.js';
 import { sendChat, myId } from '../net.js';
 import { api, getSettings } from '../api.js';
-import { getPack, socialMission } from '../pack.js';
+import { getPack, getCourse, socialMission } from '../pack.js';
+import { openClassroom, classroomOpen, closeClassroom } from './classroom.js';
+import { phoneNotes } from '../../../shared/course.js';
 
 let scene = null;
 let chatInput, chatLog;
 let busyCutscene = false;
 
 export const ui = {
-  isBlocking: () => dialogOpen() || modalOpen() || busyCutscene,
+  isBlocking: () => dialogOpen() || modalOpen() || classroomOpen() || busyCutscene,
   isTyping: () => { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); },
   prompt: showPrompt,
   setScene(s) { scene = s; },
   interact(target) {
     if (ui.isBlocking()) return;
+    if (target.type === 'location' && getPack().places[target.id]?.school) return openClassroom({ onReview: () => notebookPanel('review') });
     if (target.type === 'location') return locationMenu(target.id, { onStart: startMission, onSleep: doSleep });
     if (target.type === 'ped') {
       const p = target.ped;
@@ -71,8 +74,17 @@ function doSleep() {
   });
 }
 
+// What the phone reminds the player of (next lesson, phrases to review).
+export const notes = () => phoneNotes({ course: getCourse(), pack: getPack(), state: S.getState() });
+
 export function mountGameUI() {
   mountHUD();
+  // a newcomer who has not been to class yet hears about the school once
+  const st = S.getState();
+  if (getCourse() && st && !Object.keys(st.course.done).length && !st.flags.schoolHint) {
+    st.flags.schoolHint = true;
+    setTimeout(() => toast(t('schoolHint')), 6000);
+  }
   // Multiplayer chat box
   chatLog = h('div', { class: 'chat-log' });
   chatInput = h('input', { class: 'chat-input hidden', placeholder: `💬 ${t('chatHint')}`, maxlength: 300 });
@@ -108,14 +120,14 @@ export function mountGameUI() {
       addChat(data);
       if (data.from && data.from !== myId()) scene?.bubble?.(data.from, data.text);
     } else if (type === 'chat_ack' && data.heard > 0) S.bumpCounter('online_messages');
-    else if (type === 'newday') toast(`📅 ${t('newDay')} — ${t('day')} ${data}`);
+    else if (type === 'newday') { toast(`📅 ${t('newDay')} — ${t('day')} ${data}`); if (notes().length) setTimeout(() => toast(t('notesNew')), 2500); }
     else if (type === 'mission') scheduleRender();
   });
 
   window.addEventListener('keydown', e => {
     if (ui.isTyping()) return;
-    if (e.key === 'Escape') { if (dialogOpen()) closeDialog(); else closeModal(); return; }
-    if (dialogOpen() || busyCutscene) return;
+    if (e.key === 'Escape') { if (classroomOpen()) closeClassroom(); else if (dialogOpen()) closeDialog(); else closeModal(); return; }
+    if (dialogOpen() || classroomOpen() || busyCutscene) return;
     const k = e.key.toLowerCase();
     if (e.key === 'Enter' && !modalOpen()) { e.preventDefault(); chatInput.classList.remove('hidden'); chatInput.focus(); }
     else if (k === 'm') toggle('missions');
@@ -135,7 +147,7 @@ export function openPanel(name) {
   if (name === 'missions') missionsPanel();
   else if (name === 'inventory') inventoryPanel();
   else if (name === 'notebook') notebookPanel();
-  else if (name === 'phone') phonePanel({ onTaxi: loc => taxiRide(loc, () => toast(`${t('arrivedAt')} ${loc.name}`)) });
+  else if (name === 'phone') phonePanel({ onTaxi: loc => taxiRide(loc, () => toast(`${t('arrivedAt')} ${loc.name}`)), notes: notes() });
   else if (name === 'settings') settingsPanel();
 }
 

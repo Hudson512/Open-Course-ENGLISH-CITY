@@ -30,7 +30,7 @@ export function lintPack(pack) {
     const items = Object.entries(itemsOf(p));
     if (items.length && !p.vocabulary?.length) W(['places.yaml', p.id], 'sells things but has no "vocabulary"; players get no hints here');
     for (const [name, it] of items) if (!(it.price > 0) && !it.customer_sets_price) W(['places.yaml', p.id, name], 'the price is zero or less');
-    const used = usedAt.has(p.id) || workplaces.has(p.id) || variantSpots.has(p.id) || poolSpots.has(p.id) || items.length || p.lodging;
+    const used = p.school || usedAt.has(p.id) || workplaces.has(p.id) || variantSpots.has(p.id) || poolSpots.has(p.id) || items.length || p.lodging;
     if (!used) W(['places.yaml', p.id], 'no mission happens here, nothing is sold and nobody works here; give players a reason to come in');
     if (p.w < 100 || p.h < 100) W(['places.yaml', p.id, 'building'], 'smaller than 5 × 5 cells; the name will not fit on the building');
   }
