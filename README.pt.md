@@ -67,7 +67,7 @@ Sem Docker o jogo guarda o progresso apenas no browser, a não ser que definas `
 | 📒 **Caderno** | Vocabulário recolhido automaticamente + flashcards com repetição espaçada simples. |
 | 🔌 **Qualquer IA** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local e grátis)**, qualquer servidor compatível com OpenAI (LM Studio, vLLM…) ou **modo offline** sem IA para testar. |
 | 🧩 **City packs** | Cada cidade é uma pasta de ficheiros YAML que o jogo verifica e compila ao arrancar. Novos locais, personagens, missões e cidades inteiras não precisam de programação: vê o [guia](docs/creating-a-city.pt.md). |
-| 🏙️ **Visualizador de cidades** | Vê qualquer cidade como mapa, como cidade 3D que podes rodar (Three.js), ou anda pelas ruas em primeira pessoa, ao estilo Wolfenstein (ray casting): 🗺️ no ecrã inicial, ou `viewer.html?city=london`. Útil enquanto crias uma cidade. |
+| 🏙️ **Primeira pessoa e visualizador** | Carrega em **V** no jogo para andar pelas ruas em primeira pessoa, ao estilo Wolfenstein (ray casting), com as pessoas, os carros, as portas e as missões da cidade; carrega outra vez para a vista de cima. O visualizador mostra qualquer cidade como mapa, como cidade 3D que podes rodar (Three.js), ou anda pelas ruas em primeira pessoa, ao estilo Wolfenstein (ray casting): 🗺️ no ecrã inicial, ou `viewer.html?city=london`. Útil enquanto crias uma cidade. |
 
 ![Multiplayer](docs/screenshot-multiplayer.png)
 
@@ -108,7 +108,7 @@ O servidor escuta em `0.0.0.0:8787`. Os amigos abrem `http://<o-teu-IP>:8787`. C
 
 ### Controlos
 
-`WASD`/setas andar · `Shift` correr · `E` interagir · `Enter` chat com jogadores · `M` missões · `I` inventário · `N` caderno · `P` telemóvel (táxi) · `Esc` fechar
+`WASD`/setas andar · `Shift` correr · `E` interagir · `V` primeira pessoa (ou 🎥; W/S andar, A/D ou o rato rodar) · `Enter` chat com jogadores · `M` missões · `I` inventário · `N` caderno · `P` telemóvel (táxi) · `Esc` fechar
 
 A interface está disponível em português e inglês; os NPCs falam sempre inglês e adaptam-se ao teu nível CEFR.
 

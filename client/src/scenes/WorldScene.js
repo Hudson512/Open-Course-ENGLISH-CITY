@@ -5,8 +5,11 @@ import * as S from '../state.js';
 import { others, sendMove } from '../net.js';
 import { ui } from '../ui/ui.js';
 import { t } from '../i18n.js';
+import { FirstPerson, hexColour } from '../firstperson.js';
+import { getSettings, saveSettings } from '../api.js';
 
 const WALK = 150, RUN = 250;
+const TURN = 2.4;                  // radians a second, turning with the keys in first person
 
 export class WorldScene extends Phaser.Scene {
   constructor() { super('world'); }
@@ -33,8 +36,13 @@ export class WorldScene extends Phaser.Scene {
     this.setupCameras();
     this.setupGPS();
 
-    this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SHIFT,E', false);
+    this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SHIFT,E,V', false);
     this.keys.E.on('down', () => { if (!ui.isTyping() && this.nearest) ui.interact(this.nearest); });
+    this.keys.V.on('down', () => { if (!ui.isTyping() && !ui.isBlocking()) this.setFirstPerson(!this.fpOn); });
+    this.fpOn = false; this.fpA = this.player.rotation; this.fpLook = 0; this.fpDrag = null;
+    const offBus = S.bus.on(type => { if (type === 'toggle-view') this.setFirstPerson(!this.fpOn); });
+    this.events.once('shutdown', () => { offBus(); this.fp?.destroy(); this.fp = null; });
+    if (getSettings().firstPerson) this.setFirstPerson(true, { quiet: true });
 
     this.remote = new Map();
     this.bubbles = new Map();
@@ -318,6 +326,47 @@ export class WorldScene extends Phaser.Scene {
     for (const [id, r] of this.remote) if (!others.has(id)) { r.sp.destroy(); r.tag.destroy(); r.dot.destroy(); this.remote.delete(id); }
   }
 
+  // ── First person ──────────────────────────────────────────────
+  // V (or 🎥) switches between the map from above and walking in first person. The world underneath
+  // keeps going exactly the same; only what is drawn changes.
+  setFirstPerson(on, { quiet = false } = {}) {
+    if (on && !this.fp) {
+      this.fp = new FirstPerson(getPack());
+      const canvas = this.fp.canvas;
+      // desktop: click to steer with the mouse (Esc gives it back); phone: drag to turn and walk
+      canvas.addEventListener('click', () => { if (matchMedia('(pointer: fine)').matches && !ui.isBlocking()) canvas.requestPointerLock?.(); });
+      this.onMouse = e => { if (document.pointerLockElement === canvas) this.fpLook += e.movementX; };
+      window.addEventListener('mousemove', this.onMouse);
+      this.events.once('shutdown', () => window.removeEventListener('mousemove', this.onMouse));
+      canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { this.fpDrag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 }; canvas.setPointerCapture(e.pointerId); } });
+      canvas.addEventListener('pointermove', e => { if (this.fpDrag) { this.fpDrag.dx = e.clientX - this.fpDrag.x; this.fpDrag.dy = e.clientY - this.fpDrag.y; } });
+      const end = () => { this.fpDrag = null; };
+      canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    }
+    this.fpOn = on;
+    if (on) this.fpA = this.player.rotation;
+    else if (document.pointerLockElement) document.exitPointerLock();
+    this.fp?.show(on);
+    this.cameras.main.setVisible(!on);                   // nothing to draw underneath while it is covered
+    this.mini.setVisible(!on);
+    saveSettings({ firstPerson: on });
+    if (!quiet) S.bus.emit('toast', { text: on ? t('fpOn') : t('fpOff') });
+  }
+
+  drawFirstPerson() {
+    const moving = [];
+    for (const s of this.peds) moving.push({ kind: 'person', x: s.x, y: s.y, color: hexColour(s.tintTopLeft), label: `${s.npc.emoji} ${s.npc.name}` });
+    for (const c of this.cars) moving.push({ kind: 'car', x: c.x, y: c.y, color: hexColour(c.tintTopLeft) });
+    if (this.taxi) moving.push({ kind: 'car', x: this.taxi.x, y: this.taxi.y, color: '#ffd32a', label: '🚕 TAXI' });
+    const others = [];
+    for (const r of this.remote.values()) {
+      moving.push({ kind: 'person', x: r.sp.x, y: r.sp.y, color: hexColour(r.sp.tintTopLeft), label: r.tag.text });
+      others.push({ x: r.sp.x, y: r.sp.y });
+    }
+    const m = S.trackedMission();
+    this.fp.frame({ me: { x: this.player.x, y: this.player.y, a: this.fpA }, moving, others, night: this.night.fillAlpha, target: (m && S.missionTarget(m)) || null });
+  }
+
   // ── Main loop ─────────────────────────────────────────────────
   update(time, deltaMs) {
     const st = S.getState();
@@ -326,7 +375,21 @@ export class WorldScene extends Phaser.Scene {
     const blocking = ui.isBlocking() || st.gameOver;
     const k = this.keys;
     let vx = 0, vy = 0;
-    if (!blocking && !ui.isTyping()) {
+    if (blocking && document.pointerLockElement) document.exitPointerLock();   // a dialog needs the mouse
+    if (this.fpOn) {
+      // first person: forward/back along where you look; A/D or the mouse turn
+      let forward = 0, turn = 0;
+      if (!blocking && !ui.isTyping()) {
+        if (k.W.isDown || k.UP.isDown) forward += 1;
+        if (k.S.isDown || k.DOWN.isDown) forward -= 1;
+        if (k.A.isDown || k.LEFT.isDown) turn -= 1;
+        if (k.D.isDown || k.RIGHT.isDown) turn += 1;
+        if (this.fpDrag) { turn += Phaser.Math.Clamp(this.fpDrag.dx / 120, -1, 1); forward -= Phaser.Math.Clamp(this.fpDrag.dy / 120, -1, 1); }
+        this.fpA += turn * TURN * dt + this.fpLook * 0.003;
+      }
+      this.fpLook = 0;
+      vx = Math.cos(this.fpA) * forward; vy = Math.sin(this.fpA) * forward;
+    } else if (!blocking && !ui.isTyping()) {
       if (k.A.isDown || k.LEFT.isDown) vx -= 1;
       if (k.D.isDown || k.RIGHT.isDown) vx += 1;
       if (k.W.isDown || k.UP.isDown) vy -= 1;
@@ -335,9 +398,10 @@ export class WorldScene extends Phaser.Scene {
     const moving = vx || vy;
     const running = moving && k.SHIFT.isDown && st.stats.energy > 5;
     const speed = running ? RUN : WALK;
-    const len = Math.hypot(vx, vy) || 1;
+    const len = this.fpOn ? 1 : Math.hypot(vx, vy) || 1;
     this.player.setVelocity((vx / len) * speed, (vy / len) * speed);
-    if (moving) this.player.rotation = Math.atan2(vy, vx);
+    if (this.fpOn) this.player.rotation = this.fpA;
+    else if (moving) this.player.rotation = Math.atan2(vy, vx);
     this.nameTag.setPosition(this.player.x, this.player.y - 24);
     const myBubble = this.bubbles.get('me');
     if (myBubble) myBubble.setPosition(this.player.x, this.player.y - 34);
@@ -359,6 +423,7 @@ export class WorldScene extends Phaser.Scene {
     this.updateInteraction(blocking);
     this.updateGPS();
     this.miniDot.setPosition(this.player.x, this.player.y);
+    if (this.fpOn) this.drawFirstPerson();
   }
 
   updateNight() {

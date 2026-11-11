@@ -20,7 +20,9 @@ export function mountHUD() {
   setTimeout(() => help.classList.add('fade'), 25000);
   const buttons = h('div', { class: 'hud-buttons' },
     btn('📋', t('missions'), 'missions'), btn('🎒', t('inventory'), 'inventory'),
-    btn('📒', t('notebook'), 'notebook'), btn('📱', t('phone'), 'phone'), btn('⚙️', t('settings'), 'settings'));
+    btn('📒', t('notebook'), 'notebook'), btn('📱', t('phone'), 'phone'),
+    h('button', { class: 'icon-btn', title: t('fpToggle'), onclick: () => bus.emit('toggle-view') }, '🎥'),
+    btn('⚙️', t('settings'), 'settings'));
   root.append(statsEl, missionEl, promptEl, toastsEl, netEl, buttons, help, h('div', { class: 'minimap-frame' }));
   root.classList.remove('hidden');
   render();

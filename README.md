@@ -67,7 +67,7 @@ Without Docker the game keeps progress in the browser only, unless you set `DATA
 | 📒 **Notebook** | Vocabulary collected automatically + flashcards with simple spaced repetition. |
 | 🔌 **Any AI** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100% local and free)**, any OpenAI-compatible server (LM Studio, vLLM…) or an **offline mode** with no AI for testing. |
 | 🧩 **City packs** | Every city is a folder of YAML files that the game checks and compiles when it starts. New places, characters, missions and whole cities need no programming: see the [guide](docs/creating-a-city.md). |
-| 🏙️ **City viewer** | See any city as a map, as a 3D city you can turn around (Three.js), or walk its streets in first person, Wolfenstein-style (ray casting): 🗺️ on the title screen, or `viewer.html?city=london`. Handy while creating a city. |
+| 🏙️ **First person and city viewer** | Press **V** in the game to walk the streets in first person, Wolfenstein-style (ray casting), with the people, cars, doors and missions of the city; press it again for the view from above. The city viewer shows any city as a map, as a 3D city you can turn around (Three.js), or walk its streets in first person, Wolfenstein-style (ray casting): 🗺️ on the title screen, or `viewer.html?city=london`. Handy while creating a city. |
 
 ![Multiplayer](docs/screenshot-multiplayer.png)
 
@@ -108,7 +108,7 @@ The server listens on `0.0.0.0:8787`. Friends open `http://<your-IP>:8787`. With
 
 ### Controls
 
-`WASD`/arrows move · `Shift` run · `E` interact · `Enter` chat with players · `M` missions · `I` inventory · `N` notebook · `P` phone (taxi) · `Esc` close
+`WASD`/arrows move · `Shift` run · `E` interact · `V` first person (or 🎥; W/S walk, A/D or the mouse turn) · `Enter` chat with players · `M` missions · `I` inventory · `N` notebook · `P` phone (taxi) · `Esc` close
 
 The interface is available in Portuguese and English; NPCs always speak English and adapt to your CEFR level.
 

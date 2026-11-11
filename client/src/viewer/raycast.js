@@ -73,7 +73,28 @@ const LAMP = () => picture(16, 96, (g, w, h) => {
   g.fillStyle = '#3d4450'; g.fillRect(2, 4, 12, 7);
   g.fillStyle = '#ffe8a3'; g.fillRect(3, 10, 10, 3);
 });
-const SPRITES = { tree: { make: TREE, w: 30, h: 44 }, lamp: { make: LAMP, w: 5, h: 30 } };
+// People and cars come in many colours: one picture per colour, made when first needed.
+const PERSON = colour => picture(32, 72, (g, w) => {
+  g.fillStyle = '#2d3436'; g.fillRect(9, 44, 6, 26); g.fillRect(17, 44, 6, 26);          // legs
+  g.fillStyle = colour; g.fillRect(6, 20, 20, 27); g.fillRect(2, 22, 5, 18); g.fillRect(25, 22, 5, 18);   // body and arms
+  g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(6, 40, 20, 7);
+  g.fillStyle = '#e0ac7e'; g.beginPath(); g.arc(w / 2, 11, 9, 0, Math.PI * 2); g.fill();   // head
+  g.fillStyle = '#3b2a20'; g.beginPath(); g.arc(w / 2, 8, 9, Math.PI, 0); g.fill();         // hair
+});
+const CAR = colour => picture(96, 40, (g, w, h) => {
+  g.fillStyle = colour;
+  g.beginPath(); g.roundRect(2, 14, w - 4, 18, 5); g.fill();                                 // body
+  g.beginPath(); g.roundRect(22, 3, 52, 15, 6); g.fill();                                    // cabin
+  g.fillStyle = '#1b2631'; g.fillRect(27, 6, 19, 10); g.fillRect(50, 6, 19, 10);           // windows
+  g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(2, 26, w - 4, 6);
+  g.fillStyle = '#111'; for (const x of [22, 74]) { g.beginPath(); g.arc(x, 33, 7, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = '#fff6a0'; g.fillRect(w - 6, 17, 4, 5);
+  g.fillStyle = '#e74c3c'; g.fillRect(2, 17, 4, 5);
+});
+const SPRITES = {
+  tree: { make: TREE, w: 30, h: 44 }, lamp: { make: LAMP, w: 5, h: 30 },
+  person: { make: PERSON, w: 5, h: 11 }, car: { make: CAR, w: 22, h: 9 }
+};
 
 function skyPanorama() {
   return picture(1024, 160, (g, w, h) => {
@@ -105,7 +126,7 @@ export class RaycastView {
     this.near = groundPixels(scene, 0.5);                  // the street, sharp up close…
     this.far = groundPixels(scene, 0.125);                 // …and smoothed far away (no shimmering)
     this.sky = skyPanorama();
-    this.pictures = Object.fromEntries(Object.entries(SPRITES).map(([k, s]) => [k, { ...s, img: s.make() }]));
+    this.pictures = new Map();                             // 'tree', 'person:#e84393'… → picture
     const s = scene.spawn;
     this.pos = { x: s.x, y: s.y, a: 0 };
     this.lookToward(scene.width / 2, scene.height / 2);
@@ -145,7 +166,9 @@ export class RaycastView {
     return hit ? { block: hit.block, metres: Math.round(hit.dist / 5) } : null;
   }
 
-  render() {
+  // `moving`: people, cars and other players this frame — [{ kind: 'person'|'car', x, y, color, label? }].
+  // Returns the names to write above the people that are close and in sight: [{ x, y, text, size }].
+  render(moving = []) {
     const t0 = performance.now();
     this.resize();
     const { canvas: { width: W, height: H }, px, scene, proj, pos, maxDist, zbuf } = this;
@@ -191,9 +214,10 @@ export class RaycastView {
       for (let i = hits.length - 1; i >= 0; i--) this.wallColumn(x, hits[i], horizon, cell, fogAt(hits[i].dist), put);
     }
 
-    this.drawProps(horizon, fogAt, put);
+    const labels = this.drawProps(horizon, fogAt, put, moving);
     this.ctx.putImageData(this.img, 0, 0);
     this.adapt(performance.now() - t0);
+    return labels;
   }
 
   // One slice of a façade: windows with frames, floors, a shop front and awning on the ground floor of
@@ -244,11 +268,12 @@ export class RaycastView {
   }
 
   // Trees and street lamps: flat pictures always facing the player, hidden behind nearer walls.
-  drawProps(horizon, fogAt, put) {
+  drawProps(horizon, fogAt, put, moving = []) {
     const { canvas: { width: W, height: H }, pos, proj, zbuf, maxDist, scene } = this;
     const ca = Math.cos(pos.a), sa = Math.sin(pos.a);
     const seen = [];
-    for (const p of scene.props) {
+    const labels = [];
+    for (const p of moving.length ? scene.props.concat(moving) : scene.props) {
       const dx = p.x - pos.x, dy = p.y - pos.y;
       const depth = dx * ca + dy * sa;
       if (depth < 4 || depth > maxDist) continue;
@@ -258,7 +283,10 @@ export class RaycastView {
     }
     seen.sort((a, b) => b.depth - a.depth);
     for (const { p, depth, side } of seen) {
-      const pic = this.pictures[p.kind], img = pic.img;
+      const key = p.color ? `${p.kind}:${p.color}` : p.kind;
+      let pic = this.pictures.get(key);
+      if (!pic) { const s = SPRITES[p.kind]; if (!s) continue; pic = { ...s, img: s.make(p.color) }; this.pictures.set(key, pic); }
+      const img = pic.img;
       const scale = proj / depth;
       const sw = pic.w * scale, sh = pic.h * scale;
       const cx = W / 2 + side * scale;
@@ -277,7 +305,9 @@ export class RaycastView {
           put(y * W + x, c & 255, (c >> 8) & 255, (c >> 16) & 255, fog);
         }
       }
+      if (p.label && depth < 260 && cx > 0 && cx < W && zbuf[Math.round(cx)] > depth) labels.push({ x: cx, y: top - 3, text: p.label, size: Math.max(9, Math.min(16, 900 / depth)) });
     }
+    return labels;
   }
 
   // Draw fewer pixels on a slow machine, more on a fast one.
