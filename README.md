@@ -36,8 +36,13 @@ Open **http://localhost:8787** in Chrome or Edge.
 
 ### 🐳 Or with Docker (game + database)
 
+You need [Docker](https://docs.docker.com/get-docker/) with Compose (Docker Desktop on Windows/macOS). `make` comes with Linux and macOS; on Windows use the `docker compose` command shown in the comment.
+
 ```bash
-docker compose up --build
+git clone https://github.com/Hudson512/Open-Course-ENGLISH-CITY.git
+cd Open-Course-ENGLISH-CITY
+cp .env.example .env     # then open .env and add your keys (see "Get your keys" below)
+make up                  # or: docker compose up -d --build
 ```
 
 Open **http://localhost:3000**. Three containers start: `frontend` (nginx serving the game), `backend` (Node API + multiplayer) and `db` (Postgres). Player progress is also saved in the database, in the `pgdata` volume, so it survives restarts and rebuilds; ⚙️ Settings shows a **save code** to continue on another device.
@@ -96,6 +101,33 @@ ANTHROPIC_API_KEY=sk-ant-...
 | No AI (offline) | `mock` | — | rule-based replies |
 
 \* Model names change often: you can always choose another one in `LLM_MODEL` or in Settings. For low costs use "mini/flash/haiku" models; each NPC line is one short call (~1–2k tokens).
+
+### 🔑 Get your keys
+
+You only need **one** AI provider. Deepgram is optional (natural voices and better listening).
+
+| Service | What it is for | Where to create the key | Cost |
+|---|---|---|---|
+| [Groq](https://console.groq.com/keys) | AI characters (fast, a good start) | console.groq.com → **API Keys** → *Create API Key* | free tier with rate limits |
+| [Google Gemini](https://aistudio.google.com/app/apikey) | AI characters | Google AI Studio → **Get API key** | free tier with limits |
+| [OpenRouter](https://openrouter.ai/keys) | AI characters (many models) | openrouter.ai → **Keys** → *Create Key* | some free models, others paid |
+| [Anthropic Claude](https://console.anthropic.com/settings/keys) | AI characters | Claude Console → **API Keys** → *Create Key* | paid (per use) |
+| [OpenAI](https://platform.openai.com/api-keys) | AI characters | OpenAI Platform → **API keys** → *Create new secret key* | paid (per use) |
+| [Deepgram](https://console.deepgram.com/signup) | voices of the characters and listening to your microphone | Deepgram Console → your project → **API Keys** → *Create a New API Key* | free credit when you sign up, then paid |
+| [Ollama](https://ollama.com) | AI characters on your own computer | no key: install it and run `ollama pull llama3.1` | free |
+
+Then put them in `.env`, for example Groq + Deepgram:
+
+```env
+LLM_PROVIDER=groq          # must match the key you filled in
+GROQ_API_KEY=gsk_...
+DEEPGRAM_API_KEY=...
+```
+
+- The server reads `.env` when it starts: after a change run `make up` (Docker) or restart `npm start`.
+- Check it worked: the server log shows `LLM provider (server default): groq` and `Voices: Deepgram…`, and ⚙️ Settings → *Test connection* answers.
+- `.env` is never committed to git (it is in `.gitignore`). Keep your keys private: anyone who has them can spend your credit.
+- If you publish the server on the internet, read "Play with friends" below first.
 
 **Free and private:** install [Ollama](https://ollama.com), run `ollama pull llama3.1` and choose `ollama` in Settings. Small models follow the JSON rules less reliably; ≥ 8B is recommended.
 
