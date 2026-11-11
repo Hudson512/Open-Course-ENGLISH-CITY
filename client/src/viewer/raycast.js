@@ -167,7 +167,7 @@ export class RaycastView {
   }
 
   // `moving`: people, cars and other players this frame — [{ kind: 'person'|'car', x, y, color, label? }].
-  // Returns the names to write above the people that are close and in sight: [{ x, y, text, size }].
+  // Returns the names (and what they just said) to write above the people close and in sight: [{ x, y, text, say, size }].
   render(moving = []) {
     const t0 = performance.now();
     this.resize();
@@ -305,7 +305,7 @@ export class RaycastView {
           put(y * W + x, c & 255, (c >> 8) & 255, (c >> 16) & 255, fog);
         }
       }
-      if (p.label && depth < 260 && cx > 0 && cx < W && zbuf[Math.round(cx)] > depth) labels.push({ x: cx, y: top - 3, text: p.label, size: Math.max(9, Math.min(16, 900 / depth)) });
+      if (p.label && depth < (p.say ? 420 : 260) && cx > 0 && cx < W && zbuf[Math.round(cx)] > depth) labels.push({ x: cx, y: top - 3, text: p.label, say: p.say, size: Math.max(9, Math.min(16, 900 / depth)) });
     }
     return labels;
   }

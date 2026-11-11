@@ -28,3 +28,11 @@ jobs:
 
       - name: The game builds
         run: npm run build
+
+  docker:
+    # the images people run with `make up` must build too (a file missing from a Dockerfile only shows here)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the frontend and backend images
+        run: docker compose build

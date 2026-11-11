@@ -24,6 +24,8 @@ document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T[el.data
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
+// the same mouse speed as in the game's Settings
+const mouseSpeed = () => { try { return JSON.parse(localStorage.getItem('oceg-settings-v1') || '{}').mouseSpeed || 1; } catch { return 1; } };
 let pack = null, scene = null, mode = null, threeView = null, walkView = null, frame = 0;
 const keys = new Set();
 
@@ -89,7 +91,7 @@ function steer(dt) {
   let turn = (k('d') || k('arrowright') ? 1 : 0) - (k('a') || k('arrowleft') ? 1 : 0);
   const strafe = (k('e') ? 1 : 0) - (k('q') ? 1 : 0);
   if (drag?.dx !== undefined) { turn += Math.max(-1, Math.min(1, drag.dx / 120)); forward -= Math.max(-1, Math.min(1, drag.dy / 120)); }
-  walkView.move(forward * 90 * run * dt, strafe * 70 * run * dt, turn * 2.2 * dt + look * 0.003);
+  walkView.move(forward * 90 * run * dt, strafe * 70 * run * dt, turn * 2.2 * dt + look * 0.003 * mouseSpeed());
   look = 0;
 }
 

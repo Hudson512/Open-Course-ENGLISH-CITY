@@ -163,6 +163,7 @@ export async function settingsPanel() {
     status,
     h('h3', {}, '🎧 Audio & UI'),
     chk('voice', t('voice')), chk('mic', t('mic')), chk('handsFree', t('handsFree')), chk('autoTranslate', t('showTranslation')), chk('checkChat', t('checkChat')),
+    field(t('mouseSpeed'), mouseSpeed(st)),
     field(t('uiLang'), lang),
     ...(cfg.persistence ? cloudSection() : []),
     S.getState() ? h('button', { class: 'danger small', onclick: () => { if (confirm(t('confirmReset'))) { S.wipe(); location.reload(); } } }, `🗑 ${t('resetSave')}`) : null);
@@ -189,6 +190,14 @@ function cloudSection() {
   ];
 }
 const field = (label, input) => h('label', { class: 'field' }, h('span', {}, label), input);
+
+// How fast the mouse turns you in first person: a slider from slow to fast, saved as you move it.
+function mouseSpeed(st) {
+  const value = h('output', {}, `${(st.mouseSpeed ?? 1).toFixed(1)}×`);
+  const slider = h('input', { type: 'range', min: 0.3, max: 3, step: 0.1, value: st.mouseSpeed ?? 1,
+    oninput: e => { const v = Number(e.target.value); saveSettings({ mouseSpeed: v }); value.textContent = `${v.toFixed(1)}×`; } });
+  return h('span', { class: 'range-row' }, slider, value);
+}
 
 // ── Location menu ───────────────────────────────────────────────
 export function locationMenu(locId, { onStart, onSleep }) {

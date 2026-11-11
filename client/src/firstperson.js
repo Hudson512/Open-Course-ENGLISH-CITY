@@ -6,6 +6,33 @@ import { RaycastView } from './viewer/raycast.js';
 
 const MINI_W = 200;
 
+// What another player just said, in a bubble above their head (as in the view from above).
+export function wrapText(text, max = 28, lines = 3) {
+  const out = [];
+  let line = '';
+  for (const word of String(text).split(/\s+/)) {
+    if (!word) continue;
+    if ((line + ' ' + word).trim().length > max && line) { out.push(line); line = word; } else line = (line + ' ' + word).trim();
+    if (out.length === lines) break;
+  }
+  if (line && out.length < lines) out.push(line);
+  if (out.join(' ').length < String(text).trim().length) out[out.length - 1] = out[out.length - 1].replace(/.?$/, '…');
+  return out;
+}
+
+function speechBubble(g, text, x, bottom, size, W) {
+  const lines = wrapText(text);
+  g.font = `${size}px system-ui, sans-serif`;
+  const w = Math.max(...lines.map(l => g.measureText(l).width)) + size, h = lines.length * size * 1.25 + size * 0.6;
+  const left = Math.max(2, Math.min(W - w - 2, x - w / 2)), top = bottom - h - size * 0.4;
+  g.fillStyle = 'rgba(255,255,255,0.94)';
+  g.beginPath(); g.roundRect(left, top, w, h, size * 0.5); g.fill();
+  g.beginPath(); g.moveTo(x - size * 0.4, top + h); g.lineTo(x, bottom); g.lineTo(x + size * 0.4, top + h); g.fill();
+  g.fillStyle = '#111'; g.textAlign = 'left'; g.textBaseline = 'top';
+  lines.forEach((l, i) => g.fillText(l, left + size / 2, top + size * 0.3 + i * size * 1.25));
+  g.textAlign = 'center'; g.textBaseline = 'bottom';
+}
+
 const hexColour = n => (typeof n === 'string' ? n : `#${(n >>> 0 & 0xffffff).toString(16).padStart(6, '0')}`);
 
 export class FirstPerson {
@@ -53,9 +80,11 @@ export class FirstPerson {
     if (night > 0) { g.fillStyle = `rgba(10,22,64,${night})`; g.fillRect(0, 0, W, H); }
     g.textAlign = 'center'; g.textBaseline = 'bottom';
     for (const l of labels) {
-      g.font = `600 ${Math.round(l.size * W / 900)}px system-ui, sans-serif`;
+      const px = Math.round(l.size * W / 900);
+      g.font = `600 ${px}px system-ui, sans-serif`;
       g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,0.7)'; g.strokeText(l.text, l.x, l.y);
       g.fillStyle = '#fffbe6'; g.fillText(l.text, l.x, l.y);
+      if (l.say) speechBubble(g, l.say, l.x, l.y - px - 4, Math.max(10, Math.round(W / 70)), W);
     }
 
     // minimap with me, the target and the other players

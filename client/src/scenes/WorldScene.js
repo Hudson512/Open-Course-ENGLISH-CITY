@@ -359,8 +359,8 @@ export class WorldScene extends Phaser.Scene {
     for (const c of this.cars) moving.push({ kind: 'car', x: c.x, y: c.y, color: hexColour(c.tintTopLeft) });
     if (this.taxi) moving.push({ kind: 'car', x: this.taxi.x, y: this.taxi.y, color: '#ffd32a', label: '🚕 TAXI' });
     const others = [];
-    for (const r of this.remote.values()) {
-      moving.push({ kind: 'person', x: r.sp.x, y: r.sp.y, color: hexColour(r.sp.tintTopLeft), label: r.tag.text });
+    for (const [id, r] of this.remote) {
+      moving.push({ kind: 'person', x: r.sp.x, y: r.sp.y, color: hexColour(r.sp.tintTopLeft), label: r.tag.text, say: this.bubbles.get(id)?.text });
       others.push({ x: r.sp.x, y: r.sp.y });
     }
     const m = S.trackedMission();
@@ -385,7 +385,7 @@ export class WorldScene extends Phaser.Scene {
         if (k.A.isDown || k.LEFT.isDown) turn -= 1;
         if (k.D.isDown || k.RIGHT.isDown) turn += 1;
         if (this.fpDrag) { turn += Phaser.Math.Clamp(this.fpDrag.dx / 120, -1, 1); forward -= Phaser.Math.Clamp(this.fpDrag.dy / 120, -1, 1); }
-        this.fpA += turn * TURN * dt + this.fpLook * 0.003;
+        this.fpA += turn * TURN * dt + this.fpLook * 0.003 * (getSettings().mouseSpeed || 1);
       }
       this.fpLook = 0;
       vx = Math.cos(this.fpA) * forward; vy = Math.sin(this.fpA) * forward;
