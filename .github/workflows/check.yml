@@ -1,0 +1,30 @@
+# Runs on every push and pull request: nothing reaches main with a broken city or a failing test.
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Tests (also fail when a map picture, packs/<city>/preview.svg, is missing or out of date)
+        run: npm test
+
+      - name: City packs (every city in packs/ must be valid)
+        run: npm run pack
+
+      - name: The game builds
+        run: npm run build

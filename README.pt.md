@@ -177,13 +177,15 @@ Acrescentar conteúdo é escrever ficheiros de texto, não trabalho de motor. O 
 ```bash
 npm run dev    # servidor com reload + Vite em http://localhost:5173
 npm test       # testes (parsing, validação, prompts, mock)
-npm run pack   # verifica os city packs e diz o que corrigir
+npm run pack   # verifica os city packs, diz o que corrigir e desenha cada mapa (packs/<cidade>/preview.svg)
 ```
 
 1. Faz fork do repositório e cria um branch para a tua alteração.
 2. Corre `npm run dev`. O modo mock deixa-te trabalhar sem gastar créditos de API.
 3. Corre `npm test` (e `npm run pack` se mexeste numa cidade) antes de abrir o pull request.
 4. Abre um PR e descreve o que mudou. Um screenshot ajuda em tudo o que seja visual.
+
+Cada pull request é verificado automaticamente (testes, city packs, imagens dos mapas, build) pelo [GitHub Actions](.github/workflows/check.yml).
 
 Não sabes por onde começar, ou tens uma ideia? [Abre uma issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — perguntas e sugestões são bem-vindas, em inglês, português ou francês.
 

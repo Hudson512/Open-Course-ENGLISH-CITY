@@ -12,6 +12,7 @@ This guide is the practical part. Every field and rule is listed in the
 - [Before you start](#before-you-start)
 - [Add a place in ten minutes](#add-a-place-in-ten-minutes)
 - [Add a mission](#add-a-mission)
+- [Draw the map](#draw-the-map)
 - [Create a new city](#create-a-new-city)
 - [When the checker complains](#when-the-checker-complains)
 - [Writing good characters and missions](#writing-good-characters-and-missions)
@@ -167,6 +168,65 @@ get_oyster:
   complete: { flag: oyster }
 ```
 
+## Draw the map
+
+A map is a sheet of squared paper. Every square is a **cell** (20 pixels in the game) and every position is
+written `[column, row]`, counted from the top-left corner: `[0, 0]` is the top-left cell, columns grow to
+the right, rows grow downwards. This is London, exactly as `npm run pack` draws it:
+
+![The map of London, with the cell numbers along the top and the left](../packs/london/preview.svg)
+
+The numbers along the top and the left are the ones you write in the files. The Jobcentre in the picture
+starts at column 61, row 50, and is 12 cells wide and 10 tall; in `places.yaml` that is
+`building: { at: [61, 50], size: [12, 10], door: top }`.
+
+Everything about the ground is in `map.yaml`:
+
+```yaml
+cell: 20
+size: [110, 90]              # columns, rows
+
+roads:                       # each road crosses the whole map
+  - { row: 12, width: 5 }    # a horizontal road covering rows 12 to 16
+  - { col: 18, width: 5 }    # a vertical road covering columns 18 to 22
+
+park: { name: Kingsway Green, at: [24, 50], size: [29, 21] }
+
+decor:                       # buildings nobody can enter; they only fill the city
+  - { at: [2, 2], size: [14, 9] }
+
+spawn: [19.5, 32]            # where the player stands when the game starts
+taxi_stand: [20.25, 27]      # where the taxi drops and picks up
+```
+
+The buildings people can enter are not here: each one is the `building:` line of its place in `places.yaml`.
+
+**How to go about it**
+
+1. **Roads first.** They cut the map into blocks. Three across and three down, 5 cells wide, is a good start.
+2. **Write down the blocks.** With roads at columns 18–22 and 55–59, the block between them goes from
+   column 23 to column 54. A building must fit inside one block.
+3. **Place the buildings** you can enter, each with its door on the side next to a street.
+4. **Fill the rest** with the park and decoration, so the city does not look empty.
+5. **Put the player** (`spawn`) on the road in front of the place where the story begins.
+6. **Run `npm run pack -- my-city` and open `packs/my-city/preview.svg`** in your browser. Change a number,
+   run it again, look again. It takes a second, and you never need to start the game to see the map.
+
+**The rules the checker enforces**
+
+| Rule | Why |
+|---|---|
+| Buildings, park and decoration stay inside the map and do not overlap each other or a road | they would be drawn on top of one another |
+| A door is within 2 cells of a road and nothing stands in front of it | players look for doors from the street |
+| The player can walk from `spawn` to every door, to the park and to the taxi stand | a place nobody can reach is a mission nobody can finish |
+| A passage must be wider than the player (a little more than one cell) | narrower gaps look open but are not |
+| `spawn` and `taxi_stand` are not inside a building | the player would start stuck |
+
+**Sizes that work:** a small shop is about 8 × 8 cells, a supermarket 14 × 10, an airport 14 × 24. Under
+5 × 5 the name does not fit on the building (the checker tells you). Whole maps of about 110 × 90 cells take
+a couple of minutes to cross on foot, which is right for a city with a dozen places.
+
+
 ## Create a new city
 
 **1. Copy a city and rename it.**
@@ -178,10 +238,8 @@ cp -r packs/london packs/my-city
 In `packs/my-city/city.yaml` change `id` (it must be the folder name), `name`, `country`, `flag`,
 `language` (for example `en-AU`; it sets the accent of the voices) and `currency`.
 
-**2. Draw the map** in `map.yaml`: the size in cells, the roads (each one crosses the whole map), the park,
-the buildings that are only decoration, where the player lands (`spawn`) and where the taxi waits
-(`taxi_stand`). A sketch on squared paper helps: mark the roads first, then fit the buildings in the blocks
-between them, with each door on the side next to a street.
+**2. Draw the map** in `map.yaml`, following [Draw the map](#draw-the-map) above: roads first, then the
+buildings in the blocks between them, checking the picture as you go.
 
 **3. Write the places** in `places.yaml`. A city needs at least: where the player arrives, somewhere to live
 (a place with a `lodging` block), and the places the story and the jobs point to.
@@ -216,6 +274,7 @@ Messages name the file, the entry and the problem. Some real ones:
 ```
 places.yaml › barber › character: missing "role" (their job, in a few words)
 places.yaml › barber › building: "barber" overlaps the road at row 45. Move it off the road
+places.yaml › phone_store › building: nobody can walk from where the player lands to the door of "phone_store": other buildings close the way. Leave a passage, or move the door to another side
 city.yaml › jobs › chef: workplace "restaurant" is not a place. Known: airport, phone_store, hotel, …
 missions.yaml › get_phone › goal › en: {{place.nam}} does not exist for place "phone_store"
 missions.yaml › barber_cut › allow: unknown action "shave". Known: agree_price, set_destination, rent, …
@@ -225,6 +284,15 @@ missions.yaml › barber_cut › complete: waits for "service", which is not in 
 A message such as `All mapping items must start at the same column at line 291` means the YAML itself is
 broken, almost always the indentation: use spaces (never tabs) and line fields up under each other.
 Texts with `:` or `{{` at the start need quotes: `title: { en: "Shopping: {{list with.items}}" }`.
+
+Lines starting with `⚠` are advice, not mistakes: the city works, but something will probably disappoint
+players (a mission with no Portuguese text, a shop with no vocabulary, starting money that does not cover
+the first night). They never stop the check; fix the ones that make sense.
+
+```
+  ⚠ missions.yaml › get_phone › title: no "pt" text; players using that language will read the English one
+  ⚠ places.yaml › bakery: sells things but has no "vocabulary"; players get no hints here
+```
 
 A city with mistakes is left out when the game starts (the reason is printed in the server log); the
 other cities keep working.
@@ -248,11 +316,14 @@ other cities keep working.
 
 ## Before you open a pull request
 
-- [ ] `npm run pack` shows a ✓ for your city.
+- [ ] `npm run pack` shows a ✓ for your city, and you committed the `preview.svg` it wrote (the map picture).
 - [ ] `npm test` passes (`make check` runs both).
 - [ ] You played it: the place opens, the mission can be finished, the prices charged are the ones you wrote.
 - [ ] Names of places and people are invented.
 - [ ] The pull request says what you added and, for anything visible, includes a screenshot.
+
+Every pull request is checked automatically on GitHub: the tests, every city pack, that the map pictures
+are up to date, and that the game builds. A red ✗ there tells you which of these to look at.
 
 Stuck, or missing something the format cannot express yet?
 [Open an issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — in English, Portuguese or French.

@@ -177,13 +177,15 @@ Adding content is writing text files, not engine work. The **[guide to creating 
 ```bash
 npm run dev    # server with reload + Vite at http://localhost:5173
 npm test       # tests (parsing, validation, prompts, mock)
-npm run pack   # checks the city packs and says what to fix
+npm run pack   # checks the city packs, says what to fix and draws each map (packs/<city>/preview.svg)
 ```
 
 1. Fork the repository and create a branch for your change.
 2. Run `npm run dev`. Mock mode lets you work without spending any API credits.
 3. Run `npm test` (and `npm run pack` if you touched a city) before opening the pull request.
 4. Open a PR and describe what changed. A screenshot helps for anything visual.
+
+Every pull request is checked automatically (tests, city packs, map pictures, build) by [GitHub Actions](.github/workflows/check.yml).
 
 Not sure where to start, or have an idea? [Open an issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — questions and suggestions are welcome, in English, Portuguese or French.
 

@@ -13,6 +13,7 @@ Este guia é a parte prática. Todos os campos e regras estão na
 - [Antes de começar](#antes-de-começar)
 - [Acrescentar um local em dez minutos](#acrescentar-um-local-em-dez-minutos)
 - [Acrescentar uma missão](#acrescentar-uma-missão)
+- [Desenhar o mapa](#desenhar-o-mapa)
 - [Criar uma cidade nova](#criar-uma-cidade-nova)
 - [Quando o verificador se queixa](#quando-o-verificador-se-queixa)
 - [Escrever boas personagens e missões](#escrever-boas-personagens-e-missões)
@@ -172,6 +173,66 @@ get_oyster:
   complete: { flag: oyster }
 ```
 
+## Desenhar o mapa
+
+Um mapa é uma folha de papel quadriculado. Cada quadrado é uma **célula** (20 píxeis no jogo) e cada posição
+escreve-se `[coluna, linha]`, a contar do canto superior esquerdo: `[0, 0]` é a célula de cima à esquerda,
+as colunas crescem para a direita e as linhas para baixo. Isto é Londres, tal como o `npm run pack` a desenha:
+
+![O mapa de Londres, com os números das células em cima e à esquerda](../packs/london/preview.svg)
+
+Os números em cima e à esquerda são os que escreves nos ficheiros. O Jobcentre da imagem começa na coluna
+61, linha 50, e tem 12 células de largura e 10 de altura; em `places.yaml` isso é
+`building: { at: [61, 50], size: [12, 10], door: top }`.
+
+Tudo o que diz respeito ao chão está em `map.yaml`:
+
+```yaml
+cell: 20
+size: [110, 90]              # colunas, linhas
+
+roads:                       # cada estrada atravessa o mapa todo
+  - { row: 12, width: 5 }    # estrada horizontal que ocupa as linhas 12 a 16
+  - { col: 18, width: 5 }    # estrada vertical que ocupa as colunas 18 a 22
+
+park: { name: Kingsway Green, at: [24, 50], size: [29, 21] }
+
+decor:                       # edifícios onde ninguém entra; só enchem a cidade
+  - { at: [2, 2], size: [14, 9] }
+
+spawn: [19.5, 32]            # onde o jogador está quando o jogo começa
+taxi_stand: [20.25, 27]      # onde o táxi deixa e apanha
+```
+
+Os edifícios onde se pode entrar não estão aqui: cada um é a linha `building:` do seu local em `places.yaml`.
+
+**Como fazer**
+
+1. **Primeiro as estradas.** Cortam o mapa em quarteirões. Três na horizontal e três na vertical, com 5
+   células de largura, é um bom começo.
+2. **Aponta os quarteirões.** Com estradas nas colunas 18–22 e 55–59, o quarteirão entre elas vai da coluna
+   23 à 54. Um edifício tem de caber dentro de um quarteirão.
+3. **Coloca os edifícios** onde se entra, cada um com a porta do lado de uma rua.
+4. **Enche o resto** com o parque e decoração, para a cidade não parecer vazia.
+5. **Põe o jogador** (`spawn`) na estrada em frente ao local onde a história começa.
+6. **Corre `npm run pack -- my-city` e abre `packs/my-city/preview.svg`** no browser. Muda um número, corre
+   outra vez, olha outra vez. Demora um segundo, e nunca precisas de abrir o jogo para ver o mapa.
+
+**As regras que o verificador impõe**
+
+| Regra | Porquê |
+|---|---|
+| Edifícios, parque e decoração ficam dentro do mapa e não se sobrepõem entre si nem a uma estrada | ficariam desenhados uns por cima dos outros |
+| Uma porta está a 2 células ou menos de uma estrada e não tem nada à frente | os jogadores procuram as portas a partir da rua |
+| O jogador consegue ir a pé do `spawn` a todas as portas, ao parque e à praça de táxis | um local onde ninguém chega é uma missão que ninguém termina |
+| Uma passagem tem de ser mais larga do que o jogador (um pouco mais de uma célula) | passagens mais estreitas parecem abertas, mas não são |
+| `spawn` e `taxi_stand` não ficam dentro de um edifício | o jogador começaria preso |
+
+**Tamanhos que resultam:** uma loja pequena tem cerca de 8 × 8 células, um supermercado 14 × 10, um
+aeroporto 14 × 24. Abaixo de 5 × 5 o nome não cabe no edifício (o verificador avisa). Um mapa de cerca de
+110 × 90 células atravessa-se a pé em dois minutos, o que está certo para uma cidade com uma dúzia de locais.
+
+
 ## Criar uma cidade nova
 
 **1. Copia uma cidade e muda-lhe o nome.**
@@ -183,10 +244,8 @@ cp -r packs/london packs/my-city
 Em `packs/my-city/city.yaml` muda o `id` (tem de ser o nome da pasta), `name`, `country`, `flag`,
 `language` (por exemplo `en-AU`; define o sotaque das vozes) e `currency`.
 
-**2. Desenha o mapa** em `map.yaml`: o tamanho em células, as estradas (cada uma atravessa o mapa todo), o
-parque, os edifícios que são só decoração, onde o jogador aterra (`spawn`) e onde o táxi espera
-(`taxi_stand`). Um esboço em papel quadriculado ajuda: marca primeiro as estradas e depois encaixa os
-edifícios nos quarteirões, com cada porta do lado de uma rua.
+**2. Desenha o mapa** em `map.yaml`, seguindo [Desenhar o mapa](#desenhar-o-mapa) acima: primeiro as estradas,
+depois os edifícios nos quarteirões, sempre a olhar para a imagem.
 
 **3. Escreve os locais** em `places.yaml`. Uma cidade precisa pelo menos de: onde o jogador chega, um sítio
 para morar (um local com bloco `lodging`) e os locais para onde a história e os empregos apontam.
@@ -221,6 +280,7 @@ As mensagens dizem o ficheiro, a entrada e o problema. Algumas reais:
 ```
 places.yaml › barber › character: missing "role" (their job, in a few words)
 places.yaml › barber › building: "barber" overlaps the road at row 45. Move it off the road
+places.yaml › phone_store › building: nobody can walk from where the player lands to the door of "phone_store": other buildings close the way. Leave a passage, or move the door to another side
 city.yaml › jobs › chef: workplace "restaurant" is not a place. Known: airport, phone_store, hotel, …
 missions.yaml › get_phone › goal › en: {{place.nam}} does not exist for place "phone_store"
 missions.yaml › barber_cut › allow: unknown action "shave". Known: agree_price, set_destination, rent, …
@@ -231,6 +291,15 @@ Uma mensagem como `All mapping items must start at the same column at line 291` 
 YAML está partido, quase sempre a indentação: usa espaços (nunca tabs) e alinha os campos uns por baixo
 dos outros. Textos com `:` ou que começam por `{{` precisam de aspas:
 `title: { en: "Shopping: {{list with.items}}" }`.
+
+As linhas que começam por `⚠` são conselhos, não erros: a cidade funciona, mas alguma coisa vai
+provavelmente desiludir os jogadores (uma missão sem texto em português, uma loja sem vocabulário, dinheiro
+inicial que não chega para a primeira noite). Nunca fazem a verificação falhar; corrige os que fizerem sentido.
+
+```
+  ⚠ missions.yaml › get_phone › title: no "pt" text; players using that language will read the English one
+  ⚠ places.yaml › bakery: sells things but has no "vocabulary"; players get no hints here
+```
 
 Uma cidade com erros fica de fora quando o jogo arranca (o motivo aparece no log do servidor); as outras
 continuam a funcionar.
@@ -254,11 +323,14 @@ continuam a funcionar.
 
 ## Antes de abrir um pull request
 
-- [ ] `npm run pack` mostra um ✓ na tua cidade.
+- [ ] `npm run pack` mostra um ✓ na tua cidade, e fizeste commit do `preview.svg` que ele escreveu (a imagem do mapa).
 - [ ] `npm test` passa (`make check` corre os dois).
 - [ ] Jogaste: o local abre, a missão pode ser concluída, os preços cobrados são os que escreveste.
 - [ ] Os nomes de locais e pessoas são inventados.
 - [ ] O pull request diz o que acrescentaste e, para o que é visível, inclui uma captura de ecrã.
+
+Cada pull request é verificado automaticamente no GitHub: os testes, todos os city packs, se as imagens dos
+mapas estão actualizadas e se o jogo compila. Um ✗ vermelho lá diz-te qual destes deves ver.
 
 Ficaste preso, ou falta alguma coisa que o formato ainda não consegue exprimir?
 [Abre uma issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — em inglês, português ou francês.

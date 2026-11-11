@@ -9,6 +9,8 @@ import { templateTags } from '../../shared/pack.js';
 export const FORMAT = 1;
 const FILES = ['city', 'map', 'places', 'people', 'actions', 'missions'];
 const DOOR_GAP = 18;            // px between a wall and the point where the player stands
+const PLAYER_RADIUS = 11;       // px; the player is a circle this big (WorldScene)
+const WALK_STEP = 10;           // px; how finely the walking check looks at the map
 const SIDES = ['top', 'bottom', 'left', 'right'];
 const MISSION_KINDS = ['story', 'job', 'daily', 'social', 'free'];
 // Behaviours built into the engine, with the settings each one needs / accepts.
@@ -197,6 +199,32 @@ const known = ids => (ids.length ? ` Known: ${ids.join(', ')}` : '');
 const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const gap = (pt, r) => Math.hypot(Math.max(r.x - pt.x, 0, pt.x - (r.x + r.w)), Math.max(r.y - pt.y, 0, pt.y - (r.y + r.h)));
 
+// Where can the player walk to from `from`? Buildings block the way; the park and the roads do not.
+// Returns a function telling whether a point can be reached on foot.
+function walkable(W, H, walls, from) {
+  const cols = Math.ceil(W / WALK_STEP), rows = Math.ceil(H / WALK_STEP);
+  const blocked = new Uint8Array(cols * rows);
+  for (const r of walls) {            // a wall also keeps the player's body away from it
+    // a square of the map is closed when its centre is too near the wall for the player to stand there
+    const first = v => Math.ceil((v - PLAYER_RADIUS - WALK_STEP / 2) / WALK_STEP), last = v => Math.floor((v + PLAYER_RADIUS - WALK_STEP / 2) / WALK_STEP);
+    const x0 = Math.max(0, first(r.x)), x1 = Math.min(cols - 1, last(r.x + r.w));
+    const y0 = Math.max(0, first(r.y)), y1 = Math.min(rows - 1, last(r.y + r.h));
+    for (let y = y0; y <= y1; y++) blocked.fill(1, y * cols + x0, y * cols + x1 + 1);
+  }
+  const cellOf = pt => Math.min(rows - 1, Math.max(0, Math.floor(pt.y / WALK_STEP))) * cols + Math.min(cols - 1, Math.max(0, Math.floor(pt.x / WALK_STEP)));
+  const seen = new Uint8Array(cols * rows);
+  const queue = [cellOf(from)];
+  seen[queue[0]] = 1;
+  for (let i = 0; i < queue.length; i++) {
+    const c = queue[i], x = c % cols;
+    for (const next of [x > 0 ? c - 1 : -1, x < cols - 1 ? c + 1 : -1, c - cols, c + cols]) {
+      if (next < 0 || next >= seen.length || seen[next] || blocked[next]) continue;
+      seen[next] = 1; queue.push(next);
+    }
+  }
+  return pt => seen[cellOf(pt)] === 1;
+}
+
 function walkCond(c, fn) {
   if (!isObj(c)) return;
   fn(c);
@@ -276,6 +304,16 @@ export function compileSources(src, id = src.city?.id || 'pack') {
   };
   const spawn = point(m.spawn, 'spawn');
   const taxiStand = m.taxi_stand ? point(m.taxi_stand, 'taxi_stand') : null;
+
+  // can the player walk from where they land to every door?
+  if (!errors.length) {
+    const reach = walkable(W, H, solids.filter(([label]) => label !== 'the park').map(([, r]) => r), spawn);
+    for (const p of Object.values(outPlaces)) {
+      if (!reach(p.door)) E(['places.yaml', p.id, 'building'], `nobody can walk from where the player lands to the door of "${p.id}": other buildings close the way. Leave a passage, or move the door to another side`);
+    }
+    if (park && !reach({ x: park.x + park.w / 2, y: park.y + park.h / 2 })) E(['map.yaml', 'park'], 'nobody can walk from where the player lands to the park: buildings close the way');
+    if (taxiStand && !reach(taxiStand)) E(['map.yaml', 'taxi_stand'], 'cannot be reached on foot from where the player lands');
+  }
 
   // actions
   const choices = {};         // choice name → option ids

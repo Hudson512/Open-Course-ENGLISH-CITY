@@ -350,10 +350,15 @@ wages stay engine concepts, reached through the `rent`, `hire` and `work_done` k
 1. Parse the YAML files; check their shape (wrong type, unknown field, missing field) with a small validator
    written for the purpose in `tools/pack/compile.js`, so every message can say what to fix.
 2. Check references: every `at`, `allow`, `story` entry, workplace, item and `{{path}}` must exist.
-3. Check the map: buildings inside the map, no overlaps with roads or each other, doors reachable from a road.
+3. Check the map: buildings inside the map, no overlaps with roads or each other, doors next to a road, and
+   every door, the park and the taxi stand reachable on foot from where the player lands.
 4. Check playability: every story mission's `complete` is achievable with its `allow` list; every flag that is
    required somewhere is set somewhere.
 5. Write `packs/dist/maple-city.json` (ignored by git; `dist/` itself is emptied by every `vite build`).
+6. Write `packs/maple-city/preview.svg`, a picture of the map with the cell numbers, kept in git so a change to
+   a map can be seen in a pull request (CI fails if it is out of date).
+7. Print advice (`⚠`, from `tools/pack/lint.js`): things that work but will disappoint players, such as a mission
+   with no Portuguese text. Advice never fails the check.
 
 Errors point at the file and the entry and say what to do:
 

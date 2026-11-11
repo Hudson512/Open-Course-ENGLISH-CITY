@@ -177,13 +177,15 @@ Ajouter du contenu, c'est écrire des fichiers texte, pas travailler sur le mote
 ```bash
 npm run dev    # serveur avec rechargement + Vite sur http://localhost:5173
 npm test       # tests (analyse, validation, prompts, mock)
-npm run pack   # vérifie les city packs et dit quoi corriger
+npm run pack   # vérifie les city packs, dit quoi corriger et dessine chaque carte (packs/<ville>/preview.svg)
 ```
 
 1. Forkez le dépôt et créez une branche pour votre modification.
 2. Lancez `npm run dev`. Le mode mock permet de travailler sans dépenser de crédits d'API.
 3. Lancez `npm test` (et `npm run pack` si vous avez touché à une ville) avant d'ouvrir la pull request.
 4. Ouvrez une PR et décrivez ce qui a changé. Une capture d'écran aide pour tout ce qui est visuel.
+
+Chaque pull request est vérifiée automatiquement (tests, city packs, images des cartes, build) par [GitHub Actions](.github/workflows/check.yml).
 
 Vous ne savez pas par où commencer, ou vous avez une idée ? [Ouvrez une issue](https://github.com/Hudson512/Open-Course-ENGLISH-CITY/issues) — les questions et les suggestions sont les bienvenues, en anglais, en portugais ou en français.
 

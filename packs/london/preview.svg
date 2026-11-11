@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-44 -84 2256 1896" font-family="system-ui, 'Segoe UI', Helvetica, Arial, sans-serif">
+<title>London — map preview</title>
+<rect x="-44" y="-84" width="2256" height="1896" fill="#f5f6fa"/>
+<text x="0" y="-52" font-size="28" font-weight="700" fill="#2f3542">🇬🇧 London — 110 × 90 cells (1 cell = 20 px)</text>
+<rect x="0" y="0" width="2200" height="1800" fill="#8bc98f"/>
+<rect x="480" y="1000" width="580" height="420" fill="#52b788" stroke="#40916c" stroke-width="3" rx="10"/>
+<rect x="0" y="240" width="2200" height="100" fill="#57606f"/>
+<rect x="0" y="880" width="2200" height="100" fill="#57606f"/>
+<rect x="0" y="1440" width="2200" height="100" fill="#57606f"/>
+<rect x="360" y="0" width="100" height="1800" fill="#57606f"/>
+<rect x="1100" y="0" width="100" height="1800" fill="#57606f"/>
+<rect x="1760" y="0" width="100" height="1800" fill="#57606f"/>
+<line x1="0" y1="290" x2="2200" y2="290" stroke="#f1f2f6" stroke-width="3" stroke-dasharray="24 20"/>
+<line x1="0" y1="930" x2="2200" y2="930" stroke="#f1f2f6" stroke-width="3" stroke-dasharray="24 20"/>
+<line x1="0" y1="1490" x2="2200" y2="1490" stroke="#f1f2f6" stroke-width="3" stroke-dasharray="24 20"/>
+<line x1="410" y1="0" x2="410" y2="1800" stroke="#f1f2f6" stroke-width="3" stroke-dasharray="24 20"/>
+<line x1="1150" y1="0" x2="1150" y2="1800" stroke="#f1f2f6" stroke-width="3" stroke-dasharray="24 20"/>
+<line x1="1810" y1="0" x2="1810" y2="1800" stroke="#f1f2f6" stroke-width="3" stroke-dasharray="24 20"/>
+<line x1="0" y1="0" x2="0" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="0" y="-12" font-size="20" fill="#57606f" text-anchor="middle">0</text>
+<line x1="200" y1="0" x2="200" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="200" y="-12" font-size="20" fill="#57606f" text-anchor="middle">10</text>
+<line x1="400" y1="0" x2="400" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="400" y="-12" font-size="20" fill="#57606f" text-anchor="middle">20</text>
+<line x1="600" y1="0" x2="600" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="600" y="-12" font-size="20" fill="#57606f" text-anchor="middle">30</text>
+<line x1="800" y1="0" x2="800" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="800" y="-12" font-size="20" fill="#57606f" text-anchor="middle">40</text>
+<line x1="1000" y1="0" x2="1000" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="1000" y="-12" font-size="20" fill="#57606f" text-anchor="middle">50</text>
+<line x1="1200" y1="0" x2="1200" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="1200" y="-12" font-size="20" fill="#57606f" text-anchor="middle">60</text>
+<line x1="1400" y1="0" x2="1400" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="1400" y="-12" font-size="20" fill="#57606f" text-anchor="middle">70</text>
+<line x1="1600" y1="0" x2="1600" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="1600" y="-12" font-size="20" fill="#57606f" text-anchor="middle">80</text>
+<line x1="1800" y1="0" x2="1800" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="1800" y="-12" font-size="20" fill="#57606f" text-anchor="middle">90</text>
+<line x1="2000" y1="0" x2="2000" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="2000" y="-12" font-size="20" fill="#57606f" text-anchor="middle">100</text>
+<line x1="2200" y1="0" x2="2200" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="2200" y="-12" font-size="20" fill="#57606f" text-anchor="middle">110</text>
+<line x1="0" y1="0" x2="2200" y2="0" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="7" font-size="20" fill="#57606f" text-anchor="end">0</text>
+<line x1="0" y1="200" x2="2200" y2="200" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="207" font-size="20" fill="#57606f" text-anchor="end">10</text>
+<line x1="0" y1="400" x2="2200" y2="400" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="407" font-size="20" fill="#57606f" text-anchor="end">20</text>
+<line x1="0" y1="600" x2="2200" y2="600" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="607" font-size="20" fill="#57606f" text-anchor="end">30</text>
+<line x1="0" y1="800" x2="2200" y2="800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="807" font-size="20" fill="#57606f" text-anchor="end">40</text>
+<line x1="0" y1="1000" x2="2200" y2="1000" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="1007" font-size="20" fill="#57606f" text-anchor="end">50</text>
+<line x1="0" y1="1200" x2="2200" y2="1200" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="1207" font-size="20" fill="#57606f" text-anchor="end">60</text>
+<line x1="0" y1="1400" x2="2200" y2="1400" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="1407" font-size="20" fill="#57606f" text-anchor="end">70</text>
+<line x1="0" y1="1600" x2="2200" y2="1600" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="1607" font-size="20" fill="#57606f" text-anchor="end">80</text>
+<line x1="0" y1="1800" x2="2200" y2="1800" stroke="#000" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="-10" y="1807" font-size="20" fill="#57606f" text-anchor="end">90</text>
+<rect x="0" y="0" width="2200" height="1800" fill="none" stroke="#2f3542" stroke-width="3"/>
+<rect x="40" y="40" width="280" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1220" y="40" width="500" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1880" y="40" width="280" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="40" y="1000" width="280" height="400" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1500" y="1000" width="220" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1220" y="1240" width="500" height="180" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1880" y="1000" width="280" height="400" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="40" y="1560" width="280" height="200" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="480" y="1560" width="580" height="200" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1220" y="1560" width="500" height="200" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<rect x="1880" y="1560" width="280" height="200" fill="#a4b0be" stroke="#747d8c" stroke-width="2" rx="4"/>
+<text x="770" y="1219" font-size="26" font-weight="600" fill="#ffffff" text-anchor="middle">🌳 Kingsway Green</text>
+<rect x="40" y="360" width="280" height="480" fill="#8fa3b8" stroke="#5d7085" stroke-width="6" rx="6"/>
+<text x="180" y="594" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">✈️ Airport</text>
+<text x="180" y="624" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">airport</text>
+<circle cx="338" cy="600" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of airport</title></circle>
+<rect x="480" y="40" width="200" height="180" fill="#6c5ce7" stroke="#4834d4" stroke-width="6" rx="6"/>
+<text x="580" y="124" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">📱 Phone shop</text>
+<text x="580" y="154" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">phone_shop</text>
+<circle cx="580" cy="238" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of phone_shop</title></circle>
+<rect x="760" y="40" width="220" height="180" fill="#dc241f" stroke="#0019a8" stroke-width="6" rx="6"/>
+<text x="870" y="124" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">🚇 Tube station</text>
+<text x="870" y="154" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">tube</text>
+<circle cx="870" cy="238" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of tube</title></circle>
+<rect x="480" y="360" width="200" height="180" fill="#e17055" stroke="#b44a32" stroke-width="6" rx="6"/>
+<text x="580" y="444" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">🛏️ Hostel</text>
+<text x="580" y="474" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">hostel</text>
+<circle cx="580" cy="342" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of hostel</title></circle>
+<rect x="720" y="360" width="220" height="180" fill="#b08968" stroke="#7f5539" stroke-width="6" rx="6"/>
+<text x="830" y="444" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">🏘️ Flatshare</text>
+<text x="830" y="474" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">flat</text>
+<circle cx="830" cy="342" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of flat</title></circle>
+<rect x="480" y="680" width="180" height="160" fill="#fdcb6e" stroke="#e1a32b" stroke-width="6" rx="6"/>
+<text x="570" y="754" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">🥐 Bakery</text>
+<text x="570" y="784" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">bakery</text>
+<circle cx="570" cy="858" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of bakery</title></circle>
+<rect x="700" y="680" width="160" height="160" fill="#74b9ff" stroke="#0984e3" stroke-width="6" rx="6"/>
+<text x="780" y="754" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">💈 Barber's</text>
+<text x="780" y="784" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">barber</text>
+<circle cx="780" cy="858" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of barber</title></circle>
+<rect x="900" y="660" width="180" height="180" fill="#c0392b" stroke="#6d2018" stroke-width="6" rx="6"/>
+<text x="990" y="744" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">🍺 Pub</text>
+<text x="990" y="774" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">pub</text>
+<circle cx="990" cy="858" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of pub</title></circle>
+<rect x="1220" y="360" width="280" height="200" fill="#55efc4" stroke="#00b894" stroke-width="6" rx="6"/>
+<text x="1360" y="454" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">🛒 Supermarket</text>
+<text x="1360" y="484" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">supermarket</text>
+<circle cx="1360" cy="342" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of supermarket</title></circle>
+<rect x="1540" y="360" width="180" height="180" fill="#d4a373" stroke="#9c6644" stroke-width="6" rx="6"/>
+<text x="1630" y="444" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">☕ Café</text>
+<text x="1630" y="474" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">cafe</text>
+<circle cx="1630" cy="342" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of cafe</title></circle>
+<rect x="1220" y="700" width="220" height="150" fill="#dfe6e9" stroke="#95a5a6" stroke-width="6" rx="6"/>
+<text x="1330" y="769" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">🏦 Bank</text>
+<text x="1330" y="799" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">bank</text>
+<circle cx="1330" cy="868" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of bank</title></circle>
+<rect x="1480" y="700" width="240" height="150" fill="#ffffff" stroke="#005eb8" stroke-width="6" rx="6"/>
+<text x="1600" y="769" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">🏥 GP surgery</text>
+<text x="1600" y="799" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">surgery</text>
+<circle cx="1600" cy="868" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of surgery</title></circle>
+<rect x="1220" y="1000" width="240" height="200" fill="#a29bfe" stroke="#6c5ce7" stroke-width="6" rx="6"/>
+<text x="1340" y="1094" font-size="24" font-weight="700" fill="#1e272e" text-anchor="middle">💼 Jobcentre</text>
+<text x="1340" y="1124" font-size="19.2" fill="#1e272e" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">job_centre</text>
+<circle cx="1340" cy="982" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of job_centre</title></circle>
+<rect x="1880" y="380" width="260" height="400" fill="#636e72" stroke="#2d3436" stroke-width="6" rx="6"/>
+<text x="2010" y="574" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">🏙️ Offices</text>
+<text x="2010" y="604" font-size="19.2" fill="#ffffff" fill-opacity="0.8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace">offices</text>
+<circle cx="1862" cy="580" r="9" fill="#ffffff" stroke="#2f3542" stroke-width="3"><title>door of offices</title></circle>
+<rect x="389" y="524" width="32" height="32" rx="6" fill="#f9ca24" stroke="#2f3542" stroke-width="3"/>
+<text x="405" y="547" font-size="20" text-anchor="middle">🚕</text>
+<circle cx="390" cy="640" r="14" fill="#eb4d4b" stroke="#ffffff" stroke-width="4"><title>spawn: where the player lands</title></circle>
+<circle cx="14" cy="1823" r="11" fill="#eb4d4b" stroke="#ffffff" stroke-width="3"/><text x="34" y="1830" font-size="20" fill="#2f3542">spawn</text>
+<circle cx="130" cy="1823" r="8" fill="#ffffff" stroke="#2f3542" stroke-width="3"/><text x="148" y="1830" font-size="20" fill="#2f3542">door</text>
+<rect x="222" y="1811" width="24" height="24" rx="5" fill="#f9ca24" stroke="#2f3542" stroke-width="2"/><text x="256" y="1830" font-size="20" fill="#2f3542">taxi stand</text>
+<rect x="380" y="1811" width="24" height="24" rx="4" fill="#a4b0be" stroke="#747d8c" stroke-width="2"/><text x="414" y="1830" font-size="20" fill="#2f3542">decoration (cannot be entered)</text>
+<text x="2200" y="1830" font-size="20" fill="#57606f" text-anchor="end">numbers = cells: [column, row]</text>
+</svg>
