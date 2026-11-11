@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compilePack, readPack, compileSources, PackError } from '../tools/pack/compile.js';
-import { buildScene, blockAt, canStand, doorSide, defaultFloors, GROUND, STOREY } from '../shared/scene.js';
+import { buildScene, blockAt, canStand, doorSide, defaultFloors, cameraBehind, kerbside, GROUND, STOREY } from '../shared/scene.js';
 import { cast } from '../client/src/viewer/raycast.js';
 
 const packsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'packs');
@@ -74,4 +74,24 @@ test('compiler: floors must be a sensible whole number', () => {
   assert.throws(() => compileSources(sources), e => e instanceof PackError
     && /places\.yaml › pub › building › floors: expected a whole number of floors from 1 to 40/.test(e.message)
     && /map\.yaml › decor › #1 › floors/.test(e.message));
+});
+
+test('3D camera: behind the player, and never inside a building', () => {
+  // in the middle of a road, looking along it: the camera stays at its full distance and height
+  const open = cameraBehind(scene, 57 * 20, 30 * 20, -Math.PI / 2);
+  assert.deepEqual([Math.round(open.x), Math.round(open.y), open.z], [57 * 20, 30 * 20 + 85, 55]);
+  // with the back to the hostel's wall (top side at row 18, looking up the road at row 12): it comes closer
+  const x = 29 * 20, y = 17 * 20;
+  const near = cameraBehind(scene, x, y, -Math.PI / 2);
+  assert.ok(near.y - y < 85 && near.z < 55, JSON.stringify(near));
+  const b = blockAt(scene, near.x, near.y);
+  assert.ok(!b || b.top < near.z, 'the camera is not inside a building');
+});
+
+test('parked cars stand against the kerb, along the road', () => {
+  // London's taxi stand is on the vertical road at columns 18-22
+  const spot = kerbside(scene, london.map.taxiStand.x, london.map.taxiStand.y);
+  assert.deepEqual([spot.x, spot.y, spot.angle], [18 * 20 + 7, london.map.taxiStand.y, -Math.PI / 2]);
+  const top = kerbside(scene, 300, 12 * 20 + 10);                  // near the top edge of the road at row 12
+  assert.deepEqual([top.y, top.angle], [12 * 20 + 7, Math.PI]);
 });

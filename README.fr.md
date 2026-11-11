@@ -67,7 +67,7 @@ Sans Docker, le jeu garde la progression uniquement dans le navigateur, sauf si 
 | 📒 **Carnet** | Vocabulaire collecté automatiquement + cartes mémoire avec répétition espacée simple. |
 | 🔌 **N'importe quelle IA** | Anthropic (Claude), OpenAI, Google Gemini, Groq, OpenRouter, **Ollama (100 % local et gratuit)**, tout serveur compatible OpenAI (LM Studio, vLLM…) ou un **mode hors ligne** sans IA pour tester. |
 | 🧩 **City packs** | Chaque ville est un dossier de fichiers YAML que le jeu vérifie et compile au démarrage. Nouveaux lieux, personnages, missions et villes entières sans programmation : voir le [guide](docs/creating-a-city.md) (en anglais). |
-| 🏙️ **Première personne et visionneuse** | Appuyez sur **V** dans le jeu pour parcourir les rues à la première personne, façon Wolfenstein (ray casting), avec les passants, les voitures, les portes et les missions ; appuyez à nouveau pour la vue de dessus. La visionneuse montre n'importe quelle ville en plan, en 3D à faire tourner (Three.js), ou parcourez ses rues à la première personne, façon Wolfenstein (ray casting) : 🗺️ sur l'écran d'accueil, ou `viewer.html?city=london`. Pratique pendant la création d'une ville. |
+| 🏙️ **Première personne et visionneuse** | Appuyez sur **V** dans le jeu pour parcourir les rues à la première personne, façon Wolfenstein (ray casting), avec les passants, les voitures, les portes et les missions ; appuyez à nouveau pour une vue 3D avec la caméra derrière vous (Three.js), puis encore pour la vue de dessus. La visionneuse montre n'importe quelle ville en plan, en 3D à faire tourner (Three.js), ou parcourez ses rues à la première personne, façon Wolfenstein (ray casting) : 🗺️ sur l'écran d'accueil, ou `viewer.html?city=london`. Pratique pendant la création d'une ville. |
 
 ![Multijoueur](docs/screenshot-multiplayer.png)
 
@@ -108,7 +108,7 @@ Le serveur écoute sur `0.0.0.0:8787`. Vos amis ouvrent `http://<votre-IP>:8787`
 
 ### Commandes
 
-`WASD`/flèches se déplacer · `Shift` courir · `E` interagir · `V` première personne (ou 🎥 ; W/S avancer, A/D ou la souris tourner) · `Enter` chat avec les joueurs · `M` missions · `I` inventaire · `N` carnet · `P` téléphone (taxi) · `Esc` fermer
+`WASD`/flèches se déplacer · `Shift` courir · `E` interagir · `V` changer de vue : de dessus, première personne, 3D (ou 🎥 ; W/S avancer, A/D ou la souris tourner) · `Enter` chat avec les joueurs · `M` missions · `I` inventaire · `N` carnet · `P` téléphone (taxi) · `Esc` fermer
 
 L'interface du jeu est disponible en portugais et en anglais (pas encore en français) ; le français peut être choisi comme langue maternelle pour les conseils du coach. Les PNJ parlent toujours anglais et s'adaptent à votre niveau CECRL.
 

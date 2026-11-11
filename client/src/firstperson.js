@@ -1,6 +1,6 @@
 // First person inside the game (key V, or 🎥 in the HUD): the ray caster from the city viewer drawn over
 // the top-down world. The game itself keeps running underneath — walking, walls, doors, cars hitting,
-// missions, dialogues — so everything works the same in both views; this only shows it differently.
+// missions, dialogues — so everything works the same in every view; this only shows it differently.
 import { buildScene } from '../../shared/scene.js';
 import { RaycastView } from './viewer/raycast.js';
 
@@ -20,7 +20,7 @@ export function wrapText(text, max = 28, lines = 3) {
   return out;
 }
 
-function speechBubble(g, text, x, bottom, size, W) {
+export function speechBubble(g, text, x, bottom, size, W) {
   const lines = wrapText(text);
   g.font = `${size}px system-ui, sans-serif`;
   const w = Math.max(...lines.map(l => g.measureText(l).width)) + size, h = lines.length * size * 1.25 + size * 0.6;
@@ -33,19 +33,20 @@ function speechBubble(g, text, x, bottom, size, W) {
   g.textAlign = 'center'; g.textBaseline = 'bottom';
 }
 
-const hexColour = n => (typeof n === 'string' ? n : `#${(n >>> 0 & 0xffffff).toString(16).padStart(6, '0')}`);
+export const hexColour = n => (typeof n === 'string' ? n : `#${(n >>> 0 & 0xffffff).toString(16).padStart(6, '0')}`);
 
-export class FirstPerson {
-  constructor(pack) {
-    this.scene = buildScene(pack);
+// The full-screen layer every non-map view lives in: the picture, a crosshair (first person), a compass
+// towards the tracked mission and a minimap in the corner.
+export class ViewLayer {
+  constructor(scene, { crosshair = true } = {}) {
+    this.scene = scene;
     this.root = document.createElement('div');
     this.root.className = 'fp hidden';
-    this.root.innerHTML = '<canvas class="fp-view"></canvas><div class="fp-cross">+</div>'
+    this.root.innerHTML = '<div class="fp-stage"></div>' + (crosshair ? '<div class="fp-cross">+</div>' : '')
       + '<div class="fp-compass hidden"><span class="fp-arrow">➤</span><span class="fp-dist"></span></div>'
       + '<canvas class="fp-mini"></canvas>';
     document.getElementById('game').after(this.root);
-    this.canvas = this.root.querySelector('.fp-view');
-    this.view = new RaycastView(this.canvas, this.scene);
+    this.stage = this.root.querySelector('.fp-stage');
     this.compass = this.root.querySelector('.fp-compass');
     this.arrow = this.root.querySelector('.fp-arrow');
     this.dist = this.root.querySelector('.fp-dist');
@@ -54,7 +55,7 @@ export class FirstPerson {
   }
 
   get shown() { return !this.root.classList.contains('hidden'); }
-  show(on) { this.root.classList.toggle('hidden', !on); if (on) this.view.resize(); }
+  show(on) { this.root.classList.toggle('hidden', !on); }
 
   // The map for the corner, drawn once.
   drawMiniBase() {
@@ -71,6 +72,42 @@ export class FirstPerson {
     return c;
   }
 
+  // Minimap with me, the target and the other players, and the compass towards the target.
+  update({ me, target = null, others = [] }) {
+    const m = this.mini.getContext('2d'), k = MINI_W / this.scene.width;
+    m.drawImage(this.miniBase, 0, 0);
+    for (const o of others) { m.fillStyle = '#22d3ee'; m.beginPath(); m.arc(o.x * k, o.y * k, 3, 0, 7); m.fill(); }
+    if (target) { m.fillStyle = '#ffd32a'; m.beginPath(); m.arc(target.x * k, target.y * k, 4.5, 0, 7); m.fill(); }
+    m.fillStyle = '#ff3b3b'; m.strokeStyle = '#fff'; m.lineWidth = 1.5;
+    m.beginPath(); m.moveTo(me.x * k + Math.cos(me.a) * 9, me.y * k + Math.sin(me.a) * 9);
+    m.lineTo(me.x * k + Math.cos(me.a + 2.5) * 6, me.y * k + Math.sin(me.a + 2.5) * 6);
+    m.lineTo(me.x * k + Math.cos(me.a - 2.5) * 6, me.y * k + Math.sin(me.a - 2.5) * 6);
+    m.closePath(); m.fill(); m.stroke();
+
+    if (target) {
+      const d = Math.hypot(target.x - me.x, target.y - me.y);
+      const turn = Math.atan2(target.y - me.y, target.x - me.x) - me.a;
+      this.compass.classList.toggle('hidden', d < 60);
+      this.arrow.style.transform = `rotate(${turn - Math.PI / 2}rad)`;
+      this.dist.textContent = `${Math.round(d / 5)} m`;
+    } else this.compass.classList.add('hidden');
+  }
+
+  destroy() { this.root.remove(); }
+}
+
+export class FirstPerson {
+  constructor(pack) {
+    this.scene = buildScene(pack);
+    this.layer = new ViewLayer(this.scene);
+    this.canvas = document.createElement('canvas');
+    this.canvas.className = 'fp-view';
+    this.layer.stage.append(this.canvas);
+    this.view = new RaycastView(this.canvas, this.scene);
+  }
+
+  show(on) { this.layer.show(on); if (on) this.view.resize(); }
+
   // One frame. `me` = { x, y, a }; `moving` = people and cars; `night` = 0…0.5 darkness;
   // `target` = where the tracked mission is ({ x, y }) or null; `others` = other players' dots.
   frame({ me, moving, night = 0, target = null, others = [] }) {
@@ -86,29 +123,8 @@ export class FirstPerson {
       g.fillStyle = '#fffbe6'; g.fillText(l.text, l.x, l.y);
       if (l.say) speechBubble(g, l.say, l.x, l.y - px - 4, Math.max(10, Math.round(W / 70)), W);
     }
-
-    // minimap with me, the target and the other players
-    const m = this.mini.getContext('2d'), k = MINI_W / this.scene.width;
-    m.drawImage(this.miniBase, 0, 0);
-    for (const o of others) { m.fillStyle = '#22d3ee'; m.beginPath(); m.arc(o.x * k, o.y * k, 3, 0, 7); m.fill(); }
-    if (target) { m.fillStyle = '#ffd32a'; m.beginPath(); m.arc(target.x * k, target.y * k, 4.5, 0, 7); m.fill(); }
-    m.fillStyle = '#ff3b3b'; m.strokeStyle = '#fff'; m.lineWidth = 1.5;
-    m.beginPath(); m.moveTo(me.x * k + Math.cos(me.a) * 9, me.y * k + Math.sin(me.a) * 9);
-    m.lineTo(me.x * k + Math.cos(me.a + 2.5) * 6, me.y * k + Math.sin(me.a + 2.5) * 6);
-    m.lineTo(me.x * k + Math.cos(me.a - 2.5) * 6, me.y * k + Math.sin(me.a - 2.5) * 6);
-    m.closePath(); m.fill(); m.stroke();
-
-    // compass towards the mission: where to turn, and how far
-    if (target) {
-      const d = Math.hypot(target.x - me.x, target.y - me.y);
-      const turn = Math.atan2(target.y - me.y, target.x - me.x) - me.a;
-      this.compass.classList.toggle('hidden', d < 60);
-      this.arrow.style.transform = `rotate(${turn - Math.PI / 2}rad)`;
-      this.dist.textContent = `${Math.round(d / 5)} m`;
-    } else this.compass.classList.add('hidden');
+    this.layer.update({ me, target, others });
   }
 
-  destroy() { this.root.remove(); }
+  destroy() { this.layer.destroy(); }
 }
-
-export { hexColour };

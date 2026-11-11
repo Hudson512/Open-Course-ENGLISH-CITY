@@ -6,6 +6,7 @@ import { others, sendMove } from '../net.js';
 import { ui } from '../ui/ui.js';
 import { t } from '../i18n.js';
 import { FirstPerson, hexColour } from '../firstperson.js';
+import { kerbside } from '../../../shared/scene.js';
 import { getSettings, saveSettings } from '../api.js';
 
 const WALK = 150, RUN = 250;
@@ -38,11 +39,12 @@ export class WorldScene extends Phaser.Scene {
 
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SHIFT,E,V', false);
     this.keys.E.on('down', () => { if (!ui.isTyping() && this.nearest) ui.interact(this.nearest); });
-    this.keys.V.on('down', () => { if (!ui.isTyping() && !ui.isBlocking()) this.setFirstPerson(!this.fpOn); });
-    this.fpOn = false; this.fpA = this.player.rotation; this.fpLook = 0; this.fpDrag = null;
-    const offBus = S.bus.on(type => { if (type === 'toggle-view') this.setFirstPerson(!this.fpOn); });
-    this.events.once('shutdown', () => { offBus(); this.fp?.destroy(); this.fp = null; });
-    if (getSettings().firstPerson) this.setFirstPerson(true, { quiet: true });
+    this.keys.V.on('down', () => { if (!ui.isTyping() && !ui.isBlocking()) this.nextView(); });
+    this.viewMode = 'map'; this.fpOn = false; this.fpA = this.player.rotation; this.fpLook = 0; this.fpDrag = null;
+    const offBus = S.bus.on(type => { if (type === 'toggle-view') this.nextView(); });
+    this.events.once('shutdown', () => { offBus(); this.fp?.destroy(); this.fp = null; this.g3d?.destroy(); this.g3d = null; });
+    const saved = getSettings().view || (getSettings().firstPerson ? 'fp' : 'map');
+    if (saved !== 'map') this.setView(saved, { quiet: true });
 
     this.remote = new Map();
     this.bubbles = new Map();
@@ -136,8 +138,10 @@ export class WorldScene extends Phaser.Scene {
     }
     // where the player's first ride waits
     if (taxiStand) {
-      this.taxi = this.add.image(taxiStand.x, taxiStand.y, 'car').setTint(0xffd32a).setAngle(90).setDepth(5);
-      this.label(taxiStand.x, taxiStand.y - 34, '🚕 TAXI', 12, '#ffd32a');
+      // parked against the kerb, along the road, so the traffic can pass it
+      const spot = kerbside(this.map, taxiStand.x, taxiStand.y);
+      this.taxi = this.add.image(spot.x, spot.y, 'car').setTint(0xffd32a).setRotation(spot.angle).setDepth(5);
+      this.label(spot.x, spot.y - 34, '🚕 TAXI', 12, '#ffd32a');
     }
   }
 
@@ -326,45 +330,70 @@ export class WorldScene extends Phaser.Scene {
     for (const [id, r] of this.remote) if (!others.has(id)) { r.sp.destroy(); r.tag.destroy(); r.dot.destroy(); this.remote.delete(id); }
   }
 
-  // ── First person ──────────────────────────────────────────────
-  // V (or 🎥) switches between the map from above and walking in first person. The world underneath
-  // keeps going exactly the same; only what is drawn changes.
-  setFirstPerson(on, { quiet = false } = {}) {
-    if (on && !this.fp) {
-      this.fp = new FirstPerson(getPack());
-      const canvas = this.fp.canvas;
-      // desktop: click to steer with the mouse (Esc gives it back); phone: drag to turn and walk
-      canvas.addEventListener('click', () => { if (matchMedia('(pointer: fine)').matches && !ui.isBlocking()) canvas.requestPointerLock?.(); });
-      this.onMouse = e => { if (document.pointerLockElement === canvas) this.fpLook += e.movementX; };
-      window.addEventListener('mousemove', this.onMouse);
-      this.events.once('shutdown', () => window.removeEventListener('mousemove', this.onMouse));
-      canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { this.fpDrag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 }; canvas.setPointerCapture(e.pointerId); } });
-      canvas.addEventListener('pointermove', e => { if (this.fpDrag) { this.fpDrag.dx = e.clientX - this.fpDrag.x; this.fpDrag.dy = e.clientY - this.fpDrag.y; } });
-      const end = () => { this.fpDrag = null; };
-      canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
-    }
-    this.fpOn = on;
-    if (on) this.fpA = this.player.rotation;
-    else if (document.pointerLockElement) document.exitPointerLock();
-    this.fp?.show(on);
-    this.cameras.main.setVisible(!on);                   // nothing to draw underneath while it is covered
-    this.mini.setVisible(!on);
-    saveSettings({ firstPerson: on });
-    if (!quiet) S.bus.emit('toast', { text: on ? t('fpOn') : t('fpOff') });
+  // ── Views: from above, first person, 3D ───────────────────────
+  // V (or 🎥) goes round the three. The world underneath keeps going exactly the same; only what is
+  // drawn changes. First person and 3D steer the same way: W/S along where you look, A/D or the mouse turn.
+  nextView() {
+    const order = ['map', 'fp', '3d'];
+    this.setView(order[(order.indexOf(this.viewMode) + 1) % order.length]);
   }
 
-  drawFirstPerson() {
+  async setView(mode, { quiet = false } = {}) {
+    if (!['map', 'fp', '3d'].includes(mode)) mode = 'map';
+    if (mode === 'fp' && !this.fp) { this.fp = new FirstPerson(getPack()); this.steerWith(this.fp.canvas); }
+    if (mode === '3d' && !this.g3d) {
+      try {
+        const { Game3D } = await import('../game3d.js');               // Three.js loads only when needed
+        this.g3d ||= new Game3D(getPack());
+        this.steerWith(this.g3d.canvas);
+      } catch (e) {
+        console.error('[3d]', e);
+        S.bus.emit('toast', { text: t('no3d'), kind: 'bad' });
+        mode = 'fp';
+        if (!this.fp) { this.fp = new FirstPerson(getPack()); this.steerWith(this.fp.canvas); }
+      }
+    }
+    const was = this.viewMode;
+    this.viewMode = mode;
+    this.fpOn = mode !== 'map';
+    if (this.fpOn && was === 'map') this.fpA = this.player.rotation;
+    if (!this.fpOn && document.pointerLockElement) document.exitPointerLock();
+    this.fp?.show(mode === 'fp');
+    this.g3d?.show(mode === '3d');
+    this.cameras.main.setVisible(!this.fpOn);              // nothing to draw underneath while it is covered
+    this.mini.setVisible(!this.fpOn);
+    saveSettings({ view: mode, firstPerson: undefined });
+    if (!quiet) S.bus.emit('toast', { text: t({ map: 'fpOff', fp: 'fpOn', '3d': 'v3dOn' }[mode]) });
+  }
+
+  // Desktop: click the picture to steer with the mouse (Esc gives it back). Phone: drag to turn and walk.
+  steerWith(canvas) {
+    canvas.addEventListener('click', () => { if (matchMedia('(pointer: fine)').matches && !ui.isBlocking()) canvas.requestPointerLock?.(); });
+    if (!this.onMouse) {
+      this.onMouse = e => { if (document.pointerLockElement && document.pointerLockElement.classList.contains('fp-view')) this.fpLook += e.movementX; };
+      window.addEventListener('mousemove', this.onMouse);
+      this.events.once('shutdown', () => window.removeEventListener('mousemove', this.onMouse));
+    }
+    canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { this.fpDrag = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 }; canvas.setPointerCapture(e.pointerId); } });
+    canvas.addEventListener('pointermove', e => { if (this.fpDrag) { this.fpDrag.dx = e.clientX - this.fpDrag.x; this.fpDrag.dy = e.clientY - this.fpDrag.y; } });
+    const end = () => { this.fpDrag = null; };
+    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+  }
+
+  drawView(dt) {
     const moving = [];
-    for (const s of this.peds) moving.push({ kind: 'person', x: s.x, y: s.y, color: hexColour(s.tintTopLeft), label: `${s.npc.emoji} ${s.npc.name}` });
-    for (const c of this.cars) moving.push({ kind: 'car', x: c.x, y: c.y, color: hexColour(c.tintTopLeft) });
-    if (this.taxi) moving.push({ kind: 'car', x: this.taxi.x, y: this.taxi.y, color: '#ffd32a', label: '🚕 TAXI' });
+    this.peds.forEach((s, i) => moving.push({ id: `ped${i}`, kind: 'person', x: s.x, y: s.y, angle: s.rotation, color: hexColour(s.tintTopLeft), label: `${s.npc.emoji} ${s.npc.name}` }));
+    this.cars.forEach((c, i) => moving.push({ id: `car${i}`, kind: 'car', x: c.x, y: c.y, angle: c.rotation, color: hexColour(c.tintTopLeft) }));
+    if (this.taxi) moving.push({ id: 'taxi', kind: 'car', x: this.taxi.x, y: this.taxi.y, angle: this.taxi.rotation, color: '#ffd32a', label: '🚕 TAXI' });
     const others = [];
     for (const [id, r] of this.remote) {
-      moving.push({ kind: 'person', x: r.sp.x, y: r.sp.y, color: hexColour(r.sp.tintTopLeft), label: r.tag.text, say: this.bubbles.get(id)?.text });
+      moving.push({ id: `p-${id}`, kind: 'person', x: r.sp.x, y: r.sp.y, angle: r.sp.rotation, color: hexColour(r.sp.tintTopLeft), label: r.tag.text, say: this.bubbles.get(id)?.text });
       others.push({ x: r.sp.x, y: r.sp.y });
     }
     const m = S.trackedMission();
-    this.fp.frame({ me: { x: this.player.x, y: this.player.y, a: this.fpA }, moving, others, night: this.night.fillAlpha, target: (m && S.missionTarget(m)) || null });
+    const frame = { me: { x: this.player.x, y: this.player.y, a: this.fpA }, moving, others, night: this.night.fillAlpha, target: (m && S.missionTarget(m)) || null, dt, colour: hexColour(S.getState().player.color) };
+    if (this.viewMode === 'fp') this.fp.frame(frame);
+    else if (this.viewMode === '3d' && this.g3d) this.g3d.frame(frame);
   }
 
   // ── Main loop ─────────────────────────────────────────────────
@@ -423,7 +452,7 @@ export class WorldScene extends Phaser.Scene {
     this.updateInteraction(blocking);
     this.updateGPS();
     this.miniDot.setPosition(this.player.x, this.player.y);
-    if (this.fpOn) this.drawFirstPerson();
+    if (this.fpOn) this.drawView(dt);
   }
 
   updateNight() {

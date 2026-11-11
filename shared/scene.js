@@ -12,8 +12,8 @@ export const GROUND = { grass: 0, road: 1, park: 2 };
 // decoration varies a little (always the same for the same map) so the skyline is not flat.
 export function defaultFloors(block, cell, index = 0) {
   const area = (block.w / cell) * (block.h / cell);
-  const base = Math.max(1, Math.min(6, Math.round(Math.sqrt(area) / 4)));
-  return block.kind === 'decor' ? base + 1 + ((index * 7 + 3) % 4) : base;
+  const base = Math.max(2, Math.min(5, Math.round(Math.sqrt(area) / 3.5)));
+  return block.kind === 'decor' ? base + 2 + ((index * 7 + 3) % 5) : base;
 }
 
 // The side of a building a door is on, from the door's position.
@@ -70,6 +70,41 @@ export function canStand(scene, x, y, r = 6) {
   if (x - r < 0 || y - r < 0 || x + r > scene.width || y + r > scene.height) return false;
   for (const [dx, dy] of [[-r, -r], [r, -r], [-r, r], [r, r], [0, 0]]) if (blockAt(scene, x + dx, y + dy)) return false;
   return true;
+}
+
+// Where a parked car belongs near a point: against the kerb of the nearest road, along the road.
+// → { x, y, angle } (angle 0 = facing +x, like everything else)
+export function kerbside(scene, x, y, inset = 7) {
+  let best = null;
+  for (const r of scene.roads) {
+    const horizontal = r.w > r.h;
+    const d = horizontal ? Math.min(Math.abs(y - r.y), Math.abs(y - (r.y + r.h))) : Math.min(Math.abs(x - r.x), Math.abs(x - (r.x + r.w)));
+    if (!best || d < best.d) best = { r, d, horizontal };
+  }
+  if (!best) return { x, y, angle: 0 };
+  const { r, horizontal } = best;
+  if (horizontal) {
+    const top = Math.abs(y - r.y) < Math.abs(y - (r.y + r.h));
+    return { x, y: top ? r.y + inset : r.y + r.h - inset, angle: top ? Math.PI : 0 };      // drive on the right
+  }
+  const left = Math.abs(x - r.x) < Math.abs(x - (r.x + r.w));
+  return { x: left ? r.x + inset : r.x + r.w - inset, y, angle: left ? -Math.PI / 2 : Math.PI / 2 };
+}
+
+// Where a camera following someone from behind should stand: `distance` behind them and `height`
+// up, but closer if that spot is inside a building taller than the camera (so it never looks out
+// from inside a wall). → { x, y, z }
+export function cameraBehind(scene, x, y, angle, distance = 85, height = 55) {
+  for (let d = distance; d > 12; d -= 6) {
+    const cx = x - Math.cos(angle) * d, cy = y - Math.sin(angle) * d, z = height * (d / distance);
+    let blocked = false;
+    for (let s = 0.25; s <= 1 && !blocked; s += 0.25) {          // the way from the player to the camera too
+      const b = blockAt(scene, x - Math.cos(angle) * d * s, y - Math.sin(angle) * d * s);
+      if (b && b.top > EYE + (z - EYE) * s) blocked = true;
+    }
+    if (!blocked) return { x: cx, y: cy, z };
+  }
+  return { x: x - Math.cos(angle) * 12, y: y - Math.sin(angle) * 12, z: EYE + 6 };
 }
 
 // Things standing in the street that are not buildings: trees in the park and street lamps along the
